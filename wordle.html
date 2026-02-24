@@ -432,25 +432,22 @@ window.addEventListener("online",()=>{
 });
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.addEventListener("message",(event)=>{
-    if(event.data?.type==="cache-warmed"){
-      checkOfflineReadyStatus();
+  window.addEventListener("load",async()=>{
+    try{
+      const registrations=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(reg=>reg.unregister()));
+
+      if("caches" in window){
+        const cacheKeys=await caches.keys();
+        const wordleCacheKeys=cacheKeys.filter(key=>key.startsWith("wordle-cache-"));
+        await Promise.all(wordleCacheKeys.map(key=>caches.delete(key)));
+      }
+
+      // Temporary safety mode: keep app reachable while we diagnose Android SW instability.
+      setOfflineStatus("Offline mode temporarily disabled for stability","#fbbf24");
+    }catch(error){
+      setOfflineStatus("Offline cleanup failed; refresh once","#f87171");
     }
-  });
-
-  window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("/sw.js").then(async(registration)=>{
-      await navigator.serviceWorker.ready;
-      registration.active?.postMessage({type:"warm-cache"});
-      checkOfflineReadyStatus();
-    }).catch(()=>{
-      // Keep gameplay functional if SW registration fails.
-      setOfflineStatus("Offline ready: service worker failed","#f87171");
-    });
-  });
-
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{
-    checkOfflineReadyStatus();
   });
 }else{
   setOfflineStatus("Offline ready: service worker not supported","#f87171");
