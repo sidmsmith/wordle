@@ -1,4 +1,4 @@
-const CACHE_NAME = "wordle-cache-v3";
+const CACHE_NAME = "wordle-cache-v4";
 const APP_SHELL_URLS = ["/", "/wordle", "/wordle.html", "/manifest.json", "/wordle.png"];
 
 async function warmAppShellCache() {
@@ -54,28 +54,43 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
-        const cache = await caches.open(CACHE_NAME);
-        const cachedAppShell =
-          (await cache.match("/wordle.html", { ignoreSearch: true })) ||
-          (await cache.match("/wordle", { ignoreSearch: true })) ||
-          (await cache.match("/", { ignoreSearch: true }));
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          const cachedAppShell =
+            (await cache.match("/wordle.html", { ignoreSearch: true })) ||
+            (await cache.match("/wordle", { ignoreSearch: true })) ||
+            (await cache.match("/", { ignoreSearch: true }));
 
-        if (cachedAppShell) {
-          return cachedAppShell;
+          if (cachedAppShell) {
+            return cachedAppShell;
+          }
+        } catch (error) {
+          // Ignore cache read errors and try network.
         }
 
-        return fetch(request);
+        try {
+          return await fetch(request);
+        } catch (error) {
+          // Last-chance fallback to avoid browser ERR_FAILED page.
+          return new Response(
+            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Wordle</title></head><body style='font-family:Arial,sans-serif;background:#121213;color:#fff;padding:24px;'><h2>Wordle is temporarily unavailable offline.</h2><p>Reconnect once to refresh local cache, then try again.</p></body></html>",
+            { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+          );
+        }
       })()
     );
     return;
   }
 
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
+    (async () => {
+      const cachedResponse = await caches.match(request);
       if (cachedResponse) {
         return cachedResponse;
       }
-      return fetch(request).then((networkResponse) => {
+
+      try {
+        const networkResponse = await fetch(request);
         const responseClone = networkResponse.clone();
         caches
           .open(CACHE_NAME)
@@ -84,8 +99,10 @@ self.addEventListener("fetch", (event) => {
             // Ignore cache write issues.
           });
         return networkResponse;
-      });
-    })
+      } catch (error) {
+        return new Response("", { status: 204 });
+      }
+    })()
   );
 });
 
