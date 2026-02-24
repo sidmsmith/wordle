@@ -254,11 +254,17 @@ async function checkOfflineReadyStatus(){
 function getOfflineShellPreference(){
   const params=new URLSearchParams(window.location.search);
   const modeParam=params.get("offlineShell");
+  const isStandalone=window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches;
 
   if(modeParam==="on"){
     localStorage.setItem(OFFLINE_SHELL_PREF_KEY,"on");
   }else if(modeParam==="off"){
     localStorage.setItem(OFFLINE_SHELL_PREF_KEY,"off");
+  }
+
+  // Installed app context defaults to ON unless explicitly overridden.
+  if(isStandalone&&modeParam!=="off"&&!localStorage.getItem(OFFLINE_SHELL_PREF_KEY)){
+    localStorage.setItem(OFFLINE_SHELL_PREF_KEY,"on");
   }
 
   return localStorage.getItem(OFFLINE_SHELL_PREF_KEY)==="on";
