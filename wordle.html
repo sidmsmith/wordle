@@ -99,7 +99,8 @@ const STORAGE_KEYS={
   deviceId:"wordle_device_id",
   pendingQueue:"wordle_pending_queue"
 };
-const OFFLINE_CACHE_NAME="wordle-cache-v4";
+const OFFLINE_CACHE_NAME="wordle-shell-v1";
+const OFFLINE_SHELL_PREF_KEY="wordle_offline_shell_pref";
 
 function generateClientId(){
   if(window.crypto&&window.crypto.randomUUID){
@@ -248,6 +249,19 @@ async function checkOfflineReadyStatus(){
   }catch(error){
     setOfflineStatus("Offline ready: check failed","#f87171");
   }
+}
+
+function getOfflineShellPreference(){
+  const params=new URLSearchParams(window.location.search);
+  const modeParam=params.get("offlineShell");
+
+  if(modeParam==="on"){
+    localStorage.setItem(OFFLINE_SHELL_PREF_KEY,"on");
+  }else if(modeParam==="off"){
+    localStorage.setItem(OFFLINE_SHELL_PREF_KEY,"off");
+  }
+
+  return localStorage.getItem(OFFLINE_SHELL_PREF_KEY)==="on";
 }
 
 function initGame(){
@@ -434,25 +448,40 @@ window.addEventListener("online",()=>{
 if("serviceWorker" in navigator){
   navigator.serviceWorker.addEventListener("message",(event)=>{
     if(event.data?.type==="sw-pong"){
-      setOfflineStatus(`Diagnostics mode active (${event.data.version})`,"#fbbf24");
+      const enabled=getOfflineShellPreference();
+      if(enabled){
+        setOfflineStatus(`Offline shell beta active (${event.data.version})`,"#86efac");
+      }else{
+        setOfflineStatus(`Diagnostics mode active (${event.data.version})`,"#fbbf24");
+      }
+    }else if(event.data?.type==="offline-shell-mode-updated"){
+      if(event.data.enabled){
+        setOfflineStatus("Offline shell beta enabled for this device","#86efac");
+        checkOfflineReadyStatus();
+      }else{
+        setOfflineStatus("Diagnostics mode active (offline shell disabled)","#fbbf24");
+      }
     }
   });
 
   window.addEventListener("load",async()=>{
     try{
-      const registrations=await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(reg=>reg.unregister()));
-
       if("caches" in window){
         const cacheKeys=await caches.keys();
-        const wordleCacheKeys=cacheKeys.filter(key=>key.startsWith("wordle-cache-"));
-        await Promise.all(wordleCacheKeys.map(key=>caches.delete(key)));
+        const legacyCacheKeys=cacheKeys.filter(key=>key.startsWith("wordle-cache-"));
+        await Promise.all(legacyCacheKeys.map(key=>caches.delete(key)));
       }
 
       const registration=await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
+      const offlineShellEnabled=getOfflineShellPreference();
+      registration.active?.postMessage({type:"set-offline-shell-mode",enabled:offlineShellEnabled});
       registration.active?.postMessage({type:"sw-ping"});
-      setOfflineStatus("Diagnostics mode active (offline caching disabled)","#fbbf24");
+      if(offlineShellEnabled){
+        setOfflineStatus("Enabling offline shell beta for this device...","#86efac");
+      }else{
+        setOfflineStatus("Diagnostics mode active (offline shell disabled)","#fbbf24");
+      }
     }catch(error){
       setOfflineStatus("Diagnostics mode failed; refresh once","#f87171");
     }
