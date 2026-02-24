@@ -475,8 +475,16 @@ if("serviceWorker" in navigator){
       const registration=await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
       const offlineShellEnabled=getOfflineShellPreference();
-      registration.active?.postMessage({type:"set-offline-shell-mode",enabled:offlineShellEnabled});
-      registration.active?.postMessage({type:"sw-ping"});
+      const notifyTargets=[
+        navigator.serviceWorker.controller,
+        registration.active,
+        registration.waiting,
+        registration.installing
+      ].filter(Boolean);
+      notifyTargets.forEach(worker=>{
+        worker.postMessage({type:"set-offline-shell-mode",enabled:offlineShellEnabled});
+        worker.postMessage({type:"sw-ping"});
+      });
       if(offlineShellEnabled){
         setOfflineStatus("Enabling offline shell beta for this device...","#86efac");
       }else{

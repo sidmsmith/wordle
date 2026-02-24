@@ -38,6 +38,15 @@ async function warmShellCache() {
   );
 }
 
+async function getCachedAppShell() {
+  const cache = await caches.open(SHELL_CACHE);
+  return (
+    (await cache.match("/wordle.html", { ignoreSearch: true })) ||
+    (await cache.match("/wordle", { ignoreSearch: true })) ||
+    (await cache.match("/", { ignoreSearch: true }))
+  );
+}
+
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
@@ -59,17 +68,24 @@ self.addEventListener("fetch", (event) => {
     (async () => {
       const enabled = await getOfflineShellEnabled();
       if (!enabled) {
-        return fetch(request);
+        try {
+          return await fetch(request);
+        } catch (error) {
+          const cachedApp = await getCachedAppShell();
+          if (cachedApp) {
+            return cachedApp;
+          }
+          return new Response(
+            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Wordle</title></head><body style='font-family:Arial,sans-serif;background:#121213;color:#fff;padding:24px;'><h2>Wordle is offline.</h2><p>Reconnect once to refresh local cache.</p></body></html>",
+            { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+          );
+        }
       }
 
       try {
         return await fetch(request);
       } catch (error) {
-        const cache = await caches.open(SHELL_CACHE);
-        const cachedApp =
-          (await cache.match("/wordle.html", { ignoreSearch: true })) ||
-          (await cache.match("/wordle", { ignoreSearch: true })) ||
-          (await cache.match("/", { ignoreSearch: true }));
+        const cachedApp = await getCachedAppShell();
 
         if (cachedApp) {
           return cachedApp;
