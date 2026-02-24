@@ -1,0 +1,8 @@
+{
+  "appId": "com.sidmsmith.wordle",
+  "appName": "Wordle",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

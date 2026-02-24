@@ -1,0 +1,23 @@
+{
+  "id": "/",
+  "name": "Wordle",
+  "short_name": "Wordle",
+  "description": "Offline-capable Wordle with cloud sync.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#121213",
+  "theme_color": "#121213",
+  "icons": [
+    {
+      "src": "/wordle.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/wordle.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

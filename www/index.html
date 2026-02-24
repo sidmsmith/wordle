@@ -101,7 +101,7 @@ const STORAGE_KEYS={
 };
 const OFFLINE_CACHE_NAME="wordle-shell-v1";
 const OFFLINE_SHELL_PREF_KEY="wordle_offline_shell_pref";
-const IS_NATIVE_APP=window.location.protocol==="file:";
+const IS_NATIVE_APP=true; // capacitor native build
 const SYNC_API_URL=IS_NATIVE_APP
   ?"https://wordle-theta-red.vercel.app/api/wordle-sync"
   :"/api/wordle-sync";
