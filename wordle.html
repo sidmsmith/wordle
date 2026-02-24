@@ -21,6 +21,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .tile.flip{animation:flip 0.5s}
 @keyframes flip{0%{transform:scaleY(1)}50%{transform:scaleY(0)}100%{transform:scaleY(1)}}
 #message{min-height:clamp(30px,4vh,40px);text-align:center;font-size:clamp(0.875rem,2.5vh,1.2rem);margin:0;font-weight:600;flex-shrink:0}
+#offline-status{min-height:18px;text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:-2px;flex-shrink:0}
 #new-game-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,12px) clamp(16px,4vw,24px);font-size:clamp(0.9rem,2.5vh,1.1rem);font-weight:600;border-radius:4px;cursor:pointer;margin:0;display:none;flex-shrink:0}
 #new-game-btn:hover{background:#5a9a54}
 #new-game-btn:active{transform:scale(0.98)}
@@ -40,6 +41,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <h1>WORDLE</h1>
 <div id="board"></div>
 <div id="message"></div>
+<div id="offline-status">Offline ready: checking...</div>
 <button id="new-game-btn">New Game</button>
 <div id="keyboard">
 <div class="keyboard-row">
@@ -97,6 +99,7 @@ const STORAGE_KEYS={
   deviceId:"wordle_device_id",
   pendingQueue:"wordle_pending_queue"
 };
+const OFFLINE_CACHE_NAME="wordle-cache-v2";
 
 function generateClientId(){
   if(window.crypto&&window.crypto.randomUUID){
@@ -213,6 +216,37 @@ async function trySyncPendingGames(){
     scheduleSyncRetry();
   }finally{
     isSyncInProgress=false;
+  }
+}
+
+function setOfflineStatus(text,color){
+  const el=document.getElementById("offline-status");
+  el.textContent=text;
+  if(color){
+    el.style.color=color;
+  }
+}
+
+async function checkOfflineReadyStatus(){
+  if(!("serviceWorker" in navigator)||!("caches" in window)){
+    setOfflineStatus("Offline ready: unavailable on this browser","#f87171");
+    return;
+  }
+
+  try{
+    const cache=await caches.open(OFFLINE_CACHE_NAME);
+    const requiredUrls=["/wordle.html","/wordle","/manifest.json","/wordle.png"];
+    const checks=await Promise.all(requiredUrls.map(url=>cache.match(url)));
+    const hasAllAssets=checks.every(Boolean);
+    const hasController=Boolean(navigator.serviceWorker.controller);
+
+    if(hasAllAssets&&hasController){
+      setOfflineStatus("Offline ready: yes","#86efac");
+    }else{
+      setOfflineStatus("Offline ready: not yet (keep online briefly)","#fbbf24");
+    }
+  }catch(error){
+    setOfflineStatus("Offline ready: check failed","#f87171");
   }
 }
 
@@ -398,11 +432,28 @@ window.addEventListener("online",()=>{
 });
 
 if("serviceWorker" in navigator){
+  navigator.serviceWorker.addEventListener("message",(event)=>{
+    if(event.data?.type==="cache-warmed"){
+      checkOfflineReadyStatus();
+    }
+  });
+
   window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("/sw.js").catch(()=>{
+    navigator.serviceWorker.register("/sw.js").then(async(registration)=>{
+      await navigator.serviceWorker.ready;
+      registration.active?.postMessage({type:"warm-cache"});
+      checkOfflineReadyStatus();
+    }).catch(()=>{
       // Keep gameplay functional if SW registration fails.
+      setOfflineStatus("Offline ready: service worker failed","#f87171");
     });
   });
+
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    checkOfflineReadyStatus();
+  });
+}else{
+  setOfflineStatus("Offline ready: service worker not supported","#f87171");
 }
 
 initGame();

@@ -1,10 +1,24 @@
-const CACHE_NAME = "wordle-cache-v1";
-const APP_SHELL_URLS = ["/", "/wordle.html", "/manifest.json", "/wordle.png"];
+const CACHE_NAME = "wordle-cache-v2";
+const APP_SHELL_URLS = ["/", "/wordle", "/wordle.html", "/manifest.json", "/wordle.png"];
+
+async function warmAppShellCache() {
+  const cache = await caches.open(CACHE_NAME);
+  await Promise.all(
+    APP_SHELL_URLS.map(async (url) => {
+      try {
+        const response = await fetch(url, { cache: "no-cache" });
+        if (response && response.ok) {
+          await cache.put(url, response.clone());
+        }
+      } catch (error) {
+        // Ignore individual cache failures to avoid blocking install.
+      }
+    })
+  );
+}
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL_URLS))
-  );
+  event.waitUntil(warmAppShellCache());
   self.skipWaiting();
 });
 
@@ -62,6 +76,20 @@ self.addEventListener("fetch", (event) => {
           });
         return networkResponse;
       });
+    })
+  );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type !== "warm-cache") {
+    return;
+  }
+
+  event.waitUntil(
+    warmAppShellCache().then(() => {
+      if (event.source) {
+        event.source.postMessage({ type: "cache-warmed", cacheName: CACHE_NAME });
+      }
     })
   );
 });
