@@ -432,6 +432,12 @@ window.addEventListener("online",()=>{
 });
 
 if("serviceWorker" in navigator){
+  navigator.serviceWorker.addEventListener("message",(event)=>{
+    if(event.data?.type==="sw-pong"){
+      setOfflineStatus(`Diagnostics mode active (${event.data.version})`,"#fbbf24");
+    }
+  });
+
   window.addEventListener("load",async()=>{
     try{
       const registrations=await navigator.serviceWorker.getRegistrations();
@@ -443,10 +449,12 @@ if("serviceWorker" in navigator){
         await Promise.all(wordleCacheKeys.map(key=>caches.delete(key)));
       }
 
-      // Temporary safety mode: keep app reachable while we diagnose Android SW instability.
-      setOfflineStatus("Offline mode temporarily disabled for stability","#fbbf24");
+      const registration=await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      registration.active?.postMessage({type:"sw-ping"});
+      setOfflineStatus("Diagnostics mode active (offline caching disabled)","#fbbf24");
     }catch(error){
-      setOfflineStatus("Offline cleanup failed; refresh once","#f87171");
+      setOfflineStatus("Diagnostics mode failed; refresh once","#f87171");
     }
   });
 }else{
