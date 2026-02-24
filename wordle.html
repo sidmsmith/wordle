@@ -262,8 +262,8 @@ function getOfflineShellPreference(){
     localStorage.setItem(OFFLINE_SHELL_PREF_KEY,"off");
   }
 
-  // Installed app context defaults to ON unless explicitly overridden.
-  if(isStandalone&&modeParam!=="off"&&!localStorage.getItem(OFFLINE_SHELL_PREF_KEY)){
+  // Installed app context defaults to ON unless explicitly overridden in URL.
+  if(isStandalone&&modeParam!=="off"){
     localStorage.setItem(OFFLINE_SHELL_PREF_KEY,"on");
   }
 

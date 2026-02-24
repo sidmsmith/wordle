@@ -5,11 +5,15 @@ const CONFIG_MODE_KEY = "/__offline_shell_mode__";
 const APP_SHELL_URLS = ["/", "/wordle", "/wordle.html", "/manifest.json", "/wordle.png"];
 
 async function getOfflineShellEnabled() {
-  const cache = await caches.open(CONFIG_CACHE);
-  const response = await cache.match(CONFIG_MODE_KEY);
-  if (!response) return false;
-  const mode = await response.text();
-  return mode === "on";
+  try {
+    const cache = await caches.open(CONFIG_CACHE);
+    const response = await cache.match(CONFIG_MODE_KEY);
+    if (!response) return false;
+    const mode = await response.text();
+    return mode === "on";
+  } catch (error) {
+    return false;
+  }
 }
 
 async function setOfflineShellEnabled(enabled) {
@@ -39,12 +43,16 @@ async function warmShellCache() {
 }
 
 async function getCachedAppShell() {
-  const cache = await caches.open(SHELL_CACHE);
-  return (
-    (await cache.match("/wordle.html", { ignoreSearch: true })) ||
-    (await cache.match("/wordle", { ignoreSearch: true })) ||
-    (await cache.match("/", { ignoreSearch: true }))
-  );
+  try {
+    const cache = await caches.open(SHELL_CACHE);
+    return (
+      (await cache.match("/wordle.html", { ignoreSearch: true })) ||
+      (await cache.match("/wordle", { ignoreSearch: true })) ||
+      (await cache.match("/", { ignoreSearch: true }))
+    );
+  } catch (error) {
+    return null;
+  }
 }
 
 self.addEventListener("install", () => {
@@ -67,32 +75,20 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     (async () => {
       const enabled = await getOfflineShellEnabled();
-      if (!enabled) {
-        try {
-          return await fetch(request);
-        } catch (error) {
-          const cachedApp = await getCachedAppShell();
-          if (cachedApp) {
-            return cachedApp;
-          }
-          return new Response(
-            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Wordle</title></head><body style='font-family:Arial,sans-serif;background:#121213;color:#fff;padding:24px;'><h2>Wordle is offline.</h2><p>Reconnect once to refresh local cache.</p></body></html>",
-            { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-          );
-        }
-      }
 
       try {
         return await fetch(request);
       } catch (error) {
+        // Always attempt cached fallback so failed mode-sync doesn't produce ERR_FAILED.
         const cachedApp = await getCachedAppShell();
 
         if (cachedApp) {
           return cachedApp;
         }
 
+        const modeText = enabled ? "offline shell enabled" : "offline shell pending";
         return new Response(
-          "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Wordle</title></head><body style='font-family:Arial,sans-serif;background:#121213;color:#fff;padding:24px;'><h2>Wordle is offline.</h2><p>Reconnect once to refresh local cache.</p></body></html>",
+          `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Wordle</title></head><body style='font-family:Arial,sans-serif;background:#121213;color:#fff;padding:24px;'><h2>Wordle is offline.</h2><p>Mode: ${modeText}. Reconnect once to refresh local cache.</p></body></html>`,
           { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
         );
       }
