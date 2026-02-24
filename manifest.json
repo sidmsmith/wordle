@@ -1,8 +1,9 @@
 {
+  "id": "/",
   "name": "Wordle",
   "short_name": "Wordle",
   "description": "Offline-capable Wordle with cloud sync.",
-  "start_url": "/wordle.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#121213",

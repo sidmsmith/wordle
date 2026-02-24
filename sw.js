@@ -1,4 +1,4 @@
-const CACHE_NAME = "wordle-cache-v2";
+const CACHE_NAME = "wordle-cache-v3";
 const APP_SHELL_URLS = ["/", "/wordle", "/wordle.html", "/manifest.json", "/wordle.png"];
 
 async function warmAppShellCache() {
@@ -53,10 +53,19 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(async () => {
+      (async () => {
         const cache = await caches.open(CACHE_NAME);
-        return cache.match("/wordle.html");
-      })
+        const cachedAppShell =
+          (await cache.match("/wordle.html", { ignoreSearch: true })) ||
+          (await cache.match("/wordle", { ignoreSearch: true })) ||
+          (await cache.match("/", { ignoreSearch: true }));
+
+        if (cachedAppShell) {
+          return cachedAppShell;
+        }
+
+        return fetch(request);
+      })()
     );
     return;
   }

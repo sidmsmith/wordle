@@ -99,7 +99,7 @@ const STORAGE_KEYS={
   deviceId:"wordle_device_id",
   pendingQueue:"wordle_pending_queue"
 };
-const OFFLINE_CACHE_NAME="wordle-cache-v2";
+const OFFLINE_CACHE_NAME="wordle-cache-v3";
 
 function generateClientId(){
   if(window.crypto&&window.crypto.randomUUID){
@@ -235,7 +235,7 @@ async function checkOfflineReadyStatus(){
 
   try{
     const cache=await caches.open(OFFLINE_CACHE_NAME);
-    const requiredUrls=["/wordle.html","/wordle","/manifest.json","/wordle.png"];
+    const requiredUrls=["/","/wordle.html","/wordle","/manifest.json","/wordle.png"];
     const checks=await Promise.all(requiredUrls.map(url=>cache.match(url)));
     const hasAllAssets=checks.every(Boolean);
     const hasController=Boolean(navigator.serviceWorker.controller);
