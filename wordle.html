@@ -455,19 +455,18 @@ if("serviceWorker" in navigator){
 
 // ── Statistics page ────────────────────────────────────────────────────────
 
-function renderStatsCol(elId, data, showStreak){
+function renderStatsCol(elId, data, label){
   const col=document.getElementById(elId);
   col.innerHTML="";
 
   const title=document.createElement("div");
   title.className="scol-title";
-  title.textContent=showStreak?"ME":"OVERALL";
+  title.textContent=label;
   col.appendChild(title);
 
   const summary=document.createElement("div");
   summary.className="scol-summary";
-  let shtml=`<b>${data.totalGames}</b> Games<br><b>${data.winPct}%</b> Win Rate`;
-  if(showStreak) shtml+=`<br><b>${data.currentStreak}</b> Streak&nbsp;·&nbsp;<b>${data.bestStreak}</b> Best`;
+  const shtml=`<b>${data.totalGames}</b> Games<br><b>${data.winPct}%</b> Win Rate<br><b>${data.currentStreak}</b> Streak&nbsp;·&nbsp;<b>${data.bestStreak}</b> Best`;
   summary.innerHTML=shtml;
   col.appendChild(summary);
 
@@ -518,8 +517,8 @@ async function loadStats(){
     const r=await fetch(`/api/wordle-stats?deviceId=${encodeURIComponent(deviceId)}`);
     if(!r.ok) throw new Error("HTTP "+r.status);
     const d=await r.json();
-    renderStatsCol("col-me",d.me,true);
-    renderStatsCol("col-overall",d.overall,false);
+    renderStatsCol("col-me",d.me,"ME");
+    renderStatsCol("col-overall",d.overall,"OVERALL");
     msg.style.display="none";
     cols.style.display="";
   }catch(e){

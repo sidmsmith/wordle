@@ -45,8 +45,8 @@ export default async function handler(req, res) {
 
   const client = await getPool().connect();
   try {
-    // Run all three queries in parallel for speed.
-    const [meRes, overallDistRes, overallStartRes] = await Promise.all([
+    // Run all four queries in parallel for speed.
+    const [meRes, overallDistRes, overallStartRes, overallStreakRes] = await Promise.all([
       // All games for this device, ordered oldest-first for streak calculation.
       client.query(
         `SELECT guesses_count, outcome, guesses_json->>0 AS first_word
@@ -68,6 +68,10 @@ export default async function handler(req, res) {
          GROUP BY guesses_json->>0
          ORDER BY COUNT(*) DESC
          LIMIT 5`
+      ),
+      // All outcomes in chronological order for overall streak calculation.
+      client.query(
+        `SELECT outcome FROM wordle_games ORDER BY end_time ASC`
       ),
     ]);
 
@@ -120,6 +124,11 @@ export default async function handler(req, res) {
       pct: overallTotal > 0 ? Math.round((Number(r.cnt) / overallTotal) * 100) : 0,
     }));
 
+    const {
+      currentStreak: overallCurrentStreak,
+      bestStreak: overallBestStreak,
+    } = computeStreaks(overallStreakRes.rows.map(r => r.outcome));
+
     return res.status(200).json({
       me: {
         totalGames: meTotal,
@@ -134,6 +143,8 @@ export default async function handler(req, res) {
         totalGames: overallTotal,
         wins: overallWins,
         winPct: overallTotal > 0 ? Math.round((overallWins / overallTotal) * 100) : 0,
+        currentStreak: overallCurrentStreak,
+        bestStreak: overallBestStreak,
         distribution: overallDist,
         topStarters: overallTopStarters,
       },
