@@ -200,11 +200,16 @@ function removeAcknowledgedGames(ackedIds){
   setPendingQueue(filtered);
 }
 
+function localISOString(date){
+  const p=n=>String(n).padStart(2,"0");
+  return `${date.getFullYear()}-${p(date.getMonth()+1)}-${p(date.getDate())}T${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
+}
+
 function createGameSession(){
   activeGame={
     client_game_id:generateClientId(),
     device_id:getDeviceId(),
-    start_time:new Date().toISOString(),
+    start_time:localISOString(new Date()),
     end_time:null,
     target_word:targetWord.toLowerCase(),
     outcome:null,
@@ -220,7 +225,7 @@ function recordGuess(guess){
 function finalizeGame(outcome){
   if(!activeGame||activeGame.outcome)return;
   activeGame.outcome=outcome;
-  activeGame.end_time=new Date().toISOString();
+  activeGame.end_time=localISOString(new Date());
   activeGame.guesses_count=activeGame.guesses.length;
   enqueueCompletedGame(activeGame);
   activeGame=null;

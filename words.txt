@@ -980,6 +980,7 @@ gaped
 gaper
 gassy
 gated
+gator
 gaudy
 gauge
 gaunt
