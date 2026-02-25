@@ -3,7 +3,7 @@
   "name": "Wordle",
   "short_name": "Wordle",
   "description": "Offline-capable Wordle with cloud sync.",
-  "start_url": "/",
+  "start_url": "/?offlineShell=on",
   "scope": "/",
   "display": "standalone",
   "background_color": "#121213",

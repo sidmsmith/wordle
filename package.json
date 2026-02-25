@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build:web": "node scripts/prepare-capacitor-web.js",
+    "cap:icons": "node scripts/generate-android-icons.js",
     "cap:sync": "npm run build:web && npx cap sync android",
     "cap:open": "npx cap open android"
   },
@@ -13,5 +14,8 @@
     "@capacitor/cli": "^6.0.0",
     "@capacitor/core": "^6.0.0",
     "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }

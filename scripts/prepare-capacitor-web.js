@@ -16,12 +16,17 @@ if (!fs.existsSync(htmlSrc)) {
 
 let html = fs.readFileSync(htmlSrc, "utf8");
 
-// Capacitor on Android uses http://localhost, not file://.
-// Replace the runtime protocol check with a hard-coded true so the
-// native build always activates the absolute sync URL and skips SW registration.
+// 1. Replace the relative sync API URL with the absolute Vercel URL so the
+//    native WebView (served from http://localhost) can reach the cloud.
 html = html.replace(
-  'const IS_NATIVE_APP=window.location.protocol==="file:";',
-  "const IS_NATIVE_APP=true; // capacitor native build"
+  'fetch("/api/wordle-sync",{',
+  'fetch("https://wordle-theta-red.vercel.app/api/wordle-sync",{'
+);
+
+// 2. Remove service-worker registration — assets are bundled in the APK, no SW needed.
+html = html.replace(
+  /if\("serviceWorker" in navigator\)\{[\s\S]*?navigator\.serviceWorker\.register\("\/sw\.js"\)\.catch\(\(\)=>\{\}\);\s*\}\s*\}/,
+  "// Native app: service worker not used"
 );
 
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");
