@@ -16,11 +16,17 @@ if (!fs.existsSync(htmlSrc)) {
 
 let html = fs.readFileSync(htmlSrc, "utf8");
 
-// 1. Replace the relative sync API URL with the absolute Vercel URL so the
-//    native WebView (served from http://localhost) can reach the cloud.
+const BASE = "https://wordle-theta-red.vercel.app";
+
+// Replace all relative /api/ calls with absolute Vercel URLs so the native
+// WebView (served from http://localhost) can reach the cloud endpoints.
 html = html.replace(
   'fetch("/api/wordle-sync",{',
-  'fetch("https://wordle-theta-red.vercel.app/api/wordle-sync",{'
+  `fetch("${BASE}/api/wordle-sync",{`
+);
+html = html.replace(
+  'fetch(`/api/wordle-stats?deviceId=',
+  `fetch(\`${BASE}/api/wordle-stats?deviceId=`
 );
 
 // 2. Remove service-worker registration — assets are bundled in the APK, no SW needed.
