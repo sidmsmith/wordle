@@ -60,7 +60,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  const { deviceId = "" } = req.query;
+  const { username = "" } = req.query;
 
   const client = await getPool().connect();
   try {
@@ -78,13 +78,13 @@ export default async function handler(req, res) {
       overallPpgRes,
     ] = await Promise.all([
 
-      // 1. All games for this device (streak + distribution + top starters).
+      // 1. All games for this user (streak + distribution + top starters).
       client.query(
         `SELECT guesses_count, outcome, guesses_json->>0 AS first_word
          FROM wordle_games
-         WHERE device_id = $1
+         WHERE LOWER(username) = LOWER($1)
          ORDER BY end_time ASC`,
-        [deviceId]
+        [username]
       ),
 
       // 2. Aggregate counts for overall distribution.
@@ -114,12 +114,12 @@ export default async function handler(req, res) {
                 COUNT(*)::int AS uses,
                 ROUND(AVG((remaining_counts_json->>0)::float)::numeric, 1) AS avg_remaining
          FROM wordle_games
-         WHERE device_id = $1 AND remaining_counts_json IS NOT NULL
+         WHERE LOWER(username) = LOWER($1) AND remaining_counts_json IS NOT NULL
          GROUP BY guesses_json->>0
          HAVING COUNT(*) >= $2
          ORDER BY avg_remaining ASC
          LIMIT 5`,
-        [deviceId, MIN_FIRST_WORD_GAMES]
+        [username, MIN_FIRST_WORD_GAMES]
       ),
 
       // 6. Me – worst first words (highest avg remaining).
@@ -128,12 +128,12 @@ export default async function handler(req, res) {
                 COUNT(*)::int AS uses,
                 ROUND(AVG((remaining_counts_json->>0)::float)::numeric, 1) AS avg_remaining
          FROM wordle_games
-         WHERE device_id = $1 AND remaining_counts_json IS NOT NULL
+         WHERE LOWER(username) = LOWER($1) AND remaining_counts_json IS NOT NULL
          GROUP BY guesses_json->>0
          HAVING COUNT(*) >= $2
          ORDER BY avg_remaining DESC
          LIMIT 5`,
-        [deviceId, MIN_FIRST_WORD_GAMES]
+        [username, MIN_FIRST_WORD_GAMES]
       ),
 
       // 7. Me – average remaining possibilities at each guess number.
@@ -142,10 +142,10 @@ export default async function handler(req, res) {
                 ROUND(AVG(t.val::float)::numeric, 1) AS avg_remaining
          FROM wordle_games,
               jsonb_array_elements_text(remaining_counts_json) WITH ORDINALITY AS t(val, idx)
-         WHERE device_id = $1 AND remaining_counts_json IS NOT NULL
+         WHERE LOWER(username) = LOWER($1) AND remaining_counts_json IS NOT NULL
          GROUP BY t.idx
          ORDER BY t.idx`,
-        [deviceId]
+        [username]
       ),
 
       // 8. Overall – best first words.

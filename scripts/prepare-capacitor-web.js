@@ -25,8 +25,12 @@ html = html.replace(
   `fetch("${BASE}/api/wordle-sync",{`
 );
 html = html.replace(
-  'fetch(`/api/wordle-stats?deviceId=',
-  `fetch(\`${BASE}/api/wordle-stats?deviceId=`
+  'fetch(`/api/wordle-stats?username=',
+  `fetch(\`${BASE}/api/wordle-stats?username=`
+);
+html = html.replace(
+  'fetch("/api/wordle-users")',
+  `fetch("${BASE}/api/wordle-users")`
 );
 
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");

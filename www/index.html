@@ -39,6 +39,24 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #stats-btn:hover,#stats-btn:active{color:#fff}
 #remaining-btn{position:absolute;left:0;background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;font-size:clamp(0.85rem,2.3vh,1.1rem);font-weight:700;line-height:1;touch-action:manipulation}
 #remaining-btn:hover,#remaining-btn:active{color:#fff}
+/* ── Username modal ───────────────────────────────────────── */
+#user-modal{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center}
+#user-modal.open{display:flex}
+#user-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.8)}
+#user-card{position:relative;background:#1a1a1b;border:1px solid #3a3a3c;border-radius:8px;width:min(92vw,340px);display:flex;flex-direction:column;overflow:hidden;padding:16px 16px 14px}
+#user-card-title{text-align:center;font-size:0.8rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#9ca3af;margin-bottom:12px}
+#user-input{width:100%;background:#121213;border:2px solid #3a3a3c;border-radius:4px;color:#fff;font-size:1rem;font-weight:700;letter-spacing:0.08em;padding:8px 10px;text-transform:uppercase;outline:none}
+#user-input:focus{border-color:#818384}
+#user-warning{font-size:0.65rem;color:#f87171;margin-top:4px;min-height:1em;text-align:center}
+#user-chips-label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;margin:10px 0 5px}
+#user-chips{display:flex;flex-wrap:wrap;gap:6px}
+.uchip{background:#2a2a2c;border:1px solid #3a3a3c;border-radius:4px;color:#9ca3af;font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:5px 10px;cursor:pointer;touch-action:manipulation}
+.uchip:hover,.uchip:active{background:#3a3a3c;color:#fff}
+.uchip.guest{border-style:dashed;margin-top:2px}
+#user-divider{border:none;border-top:1px solid #3a3a3c;margin:8px 0 6px}
+#user-save{width:100%;margin-top:12px;background:#6aaa64;color:#fff;border:none;border-radius:4px;padding:10px;font-size:0.9rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+#user-save:hover{background:#5a9a54}
+#user-save:active{transform:scale(0.98)}
 /* ── Remaining words modal ────────────────────────────────── */
 #words-modal{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center}
 #words-modal.open{display:flex}
@@ -148,6 +166,18 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 </div>
 </div>
 
+<div id="user-modal" role="dialog" aria-modal="true" aria-label="Set username">
+<div id="user-backdrop"></div>
+<div id="user-card">
+  <div id="user-card-title">WHO ARE YOU?</div>
+  <input id="user-input" type="text" maxlength="32" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="ENTER NAME">
+  <div id="user-warning"></div>
+  <div id="user-chips-label">SELECT EXISTING</div>
+  <div id="user-chips"></div>
+  <button id="user-save">SAVE</button>
+</div>
+</div>
+
 <div id="words-modal">
 <div id="words-backdrop"></div>
 <div id="words-card">
@@ -163,7 +193,9 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div id="stats-hdr">
 <button id="stats-back">&#8592;</button>
 <h2>STATISTICS</h2>
-<div style="width:40px"></div>
+<button id="stats-gear" aria-label="Change user" style="background:none;border:none;color:#818384;cursor:pointer;padding:4px 8px;width:40px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">
+<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.34.07-.68.07-1.08s-.03-.74-.07-1.08l2.32-1.8c.21-.17.27-.46.14-.71l-2.2-3.8a.54.54 0 00-.66-.25l-2.74 1.1c-.57-.44-1.18-.81-1.86-1.09l-.42-2.9A.54.54 0 0014 2h-4a.54.54 0 00-.54.46l-.42 2.9c-.68.28-1.29.65-1.86 1.09L4.44 5.36a.54.54 0 00-.66.25l-2.2 3.8a.53.53 0 00.14.71l2.32 1.8C4.03 12.26 4 12.6 4 13s.03.74.07 1.08L1.75 15.88a.54.54 0 00-.14.71l2.2 3.8c.14.25.43.34.66.25l2.74-1.1c.57.44 1.18.81 1.86 1.09l.42 2.9c.08.28.29.47.54.47h4c.25 0 .46-.19.54-.46l.42-2.9c.68-.28 1.29-.65 1.86-1.09l2.74 1.1c.23.09.52 0 .66-.25l2.2-3.8a.54.54 0 00-.14-.71l-2.32-1.8z"/></svg>
+</button>
 </div>
 <p id="stats-msg">Loading...</p>
 <div id="stats-cols" style="display:none">
@@ -273,10 +305,15 @@ function localISOString(date){
   return `${date.getFullYear()}-${p(date.getMonth()+1)}-${p(date.getDate())}T${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
 }
 
+function getUsername(){
+  return localStorage.getItem("wordle_username")||"";
+}
+
 function createGameSession(){
   activeGame={
     client_game_id:generateClientId(),
     device_id:getDeviceId(),
+    username:getUsername()||null,
     start_time:localISOString(new Date()),
     end_time:null,
     target_word:targetWord.toLowerCase(),
@@ -695,11 +732,12 @@ async function loadStats(){
   cols.style.display="none";
   extra.style.display="none";
   try{
-    const deviceId=getDeviceId();
-    const r=await fetch(`https://wordle-theta-red.vercel.app/api/wordle-stats?deviceId=${encodeURIComponent(deviceId)}`);
+    const username=getUsername();
+    const r=await fetch(`https://wordle-theta-red.vercel.app/api/wordle-stats?username=${encodeURIComponent(username)}`);
     if(!r.ok) throw new Error("HTTP "+r.status);
     const d=await r.json();
-    renderStatsCol("col-me",d.me,"ME");
+    const meLabel=username?username.toUpperCase():"ME";
+    renderStatsCol("col-me",d.me,meLabel);
     renderStatsCol("col-overall",d.overall,"OVERALL");
     renderExtraStats(d.me,d.overall);
     msg.style.display="none";
@@ -709,6 +747,91 @@ async function loadStats(){
     msg.style.color="#f87171";
   }
 }
+
+/* ── Username modal ───────────────────────────────────────── */
+async function openUserModal(){
+  const input=document.getElementById("user-input");
+  const warning=document.getElementById("user-warning");
+  const chips=document.getElementById("user-chips");
+  const current=getUsername();
+  input.value=current.toUpperCase();
+  warning.textContent="";
+  chips.innerHTML="";
+  document.getElementById("user-modal").classList.add("open");
+  input.focus();
+
+  // Fetch existing users and render chips.
+  try{
+    const r=await fetch("https://wordle-theta-red.vercel.app/api/wordle-users");
+    const d=await r.json();
+    const users=(d.users||[]).filter(u=>u.toLowerCase()!=="guest");
+    const frag=document.createDocumentFragment();
+    users.forEach(u=>{
+      const btn=document.createElement("button");
+      btn.className="uchip";
+      btn.textContent=u.toUpperCase();
+      btn.addEventListener("click",()=>{
+        input.value=u.toUpperCase();
+        showUserWarning(current,u.toLowerCase());
+      });
+      frag.appendChild(btn);
+    });
+    // Divider + GUEST chip always at the bottom.
+    if(users.length){
+      const hr=document.createElement("hr");
+      hr.id="user-divider";
+      frag.appendChild(hr);
+    }
+    const guestBtn=document.createElement("button");
+    guestBtn.className="uchip guest";
+    guestBtn.textContent="GUEST";
+    guestBtn.addEventListener("click",()=>{
+      input.value="GUEST";
+      showUserWarning(current,"guest");
+    });
+    frag.appendChild(guestBtn);
+    chips.appendChild(frag);
+  }catch(e){
+    // Silently ignore — user can still type a name.
+  }
+}
+
+function showUserWarning(oldName,newName){
+  const w=document.getElementById("user-warning");
+  if(oldName && oldName.toLowerCase()!==newName.toLowerCase()){
+    w.textContent="Existing games saved under "+oldName.toUpperCase()+" won't be moved.";
+  } else {
+    w.textContent="";
+  }
+}
+
+function closeUserModal(){
+  document.getElementById("user-modal").classList.remove("open");
+}
+
+function saveUsername(){
+  const raw=document.getElementById("user-input").value.trim().toLowerCase();
+  if(!raw){
+    document.getElementById("user-warning").textContent="Please enter a name.";
+    return;
+  }
+  localStorage.setItem("wordle_username",raw);
+  closeUserModal();
+  // Refresh stats if the stats page is open.
+  if(document.getElementById("stats-page").classList.contains("visible")){
+    loadStats();
+  }
+}
+
+document.getElementById("user-input").addEventListener("input",function(){
+  const current=getUsername();
+  showUserWarning(current,this.value.trim().toLowerCase());
+});
+document.getElementById("user-input").addEventListener("keydown",function(e){
+  if(e.key==="Enter") saveUsername();
+});
+document.getElementById("user-save").addEventListener("click",saveUsername);
+document.getElementById("stats-gear").addEventListener("click",openUserModal);
 
 document.getElementById("stats-btn").addEventListener("click",()=>{
   document.getElementById("stats-page").classList.add("visible");
@@ -720,6 +843,9 @@ document.getElementById("stats-back").addEventListener("click",()=>{
 
 initGame();
 trySyncPendingGames();
+
+// Auto-prompt for username on load if none stored.
+if(!getUsername()) openUserModal();
 </script>
 </body>
 </html>
