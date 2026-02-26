@@ -74,6 +74,24 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .sbar-bg{flex:1;height:clamp(10px,1.7vh,14px);background:#3a3a3c;border-radius:2px;overflow:hidden}
 .sbar{height:100%;background:#818384;border-radius:2px;min-width:2px;transition:width 0.4s}
 .spct{width:26px;text-align:right;flex-shrink:0;font-size:clamp(0.53rem,1.3vh,0.65rem);color:#9ca3af}
+/* ── Extra stats sections (below main table) ──────────────────────────── */
+#stats-extra{width:100%;max-width:500px}
+.xsec{padding:clamp(5px,1.8vw,9px) clamp(8px,2vw,12px);border-top:1px solid #3a3a3c}
+.xsec-title{text-align:center;font-size:clamp(0.63rem,1.6vh,0.76rem);font-weight:700;letter-spacing:0.1em;color:#565758;text-transform:uppercase;padding-bottom:5px}
+.ppg-table{width:100%;border-collapse:collapse}
+.ppg-table th{color:#565758;font-size:clamp(0.53rem,1.3vh,0.63rem);font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 4px;text-align:center}
+.ppg-table td{padding:2px 4px;text-align:center;font-size:clamp(0.6rem,1.5vh,0.7rem);color:#9ca3af}
+.ppg-table td:first-child{font-weight:600;color:#565758}
+.ppg-me{color:#fff!important;font-weight:700!important}
+.ppg-better{color:#6aaa64!important;font-weight:700!important}
+.ppg-worse{color:#f87171!important;font-weight:700!important}
+.fw-cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3a3c;margin-top:4px}
+.fwcol{background:#121213;padding:clamp(4px,1.5vw,7px)}
+.fwcol-hdr{text-align:center;font-size:clamp(0.53rem,1.3vh,0.63rem);font-weight:700;letter-spacing:0.1em;color:#565758;text-transform:uppercase;padding-bottom:3px;border-bottom:1px solid #3a3a3c;margin-bottom:3px}
+.fwrow{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:clamp(0.58rem,1.5vh,0.7rem)}
+.fwword{text-transform:uppercase;font-weight:700;letter-spacing:0.04em;color:#fff}
+.fwavg{color:#9ca3af;font-size:clamp(0.55rem,1.3vh,0.65rem)}
+.fwno-data{color:#565758;font-size:clamp(0.55rem,1.3vh,0.65rem);text-align:center;padding:5px 2px;font-style:italic}
 </style>
 </head>
 <body>
@@ -151,6 +169,30 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div id="stats-cols" style="display:none">
 <div class="scol" id="col-me"></div>
 <div class="scol" id="col-overall"></div>
+</div>
+
+<div id="stats-extra" style="display:none">
+<div class="xsec">
+<div class="xsec-title">Possibilities Per Guess</div>
+<table class="ppg-table">
+<thead><tr><th>Guess</th><th>Me</th><th>Overall</th></tr></thead>
+<tbody id="ppg-body"></tbody>
+</table>
+</div>
+<div class="xsec">
+<div class="xsec-title">Best First Words</div>
+<div class="fw-cols">
+<div class="fwcol"><div class="fwcol-hdr">Me</div><div id="fw-best-me"></div></div>
+<div class="fwcol"><div class="fwcol-hdr">Overall</div><div id="fw-best-overall"></div></div>
+</div>
+</div>
+<div class="xsec">
+<div class="xsec-title">Worst First Words</div>
+<div class="fw-cols">
+<div class="fwcol"><div class="fwcol-hdr">Me</div><div id="fw-worst-me"></div></div>
+<div class="fwcol"><div class="fwcol-hdr">Overall</div><div id="fw-worst-overall"></div></div>
+</div>
+</div>
 </div>
 </div>
 
@@ -239,7 +281,8 @@ function createGameSession(){
     end_time:null,
     target_word:targetWord.toLowerCase(),
     outcome:null,
-    guesses:[]
+    guesses:[],
+    remaining_counts:[]
   };
 }
 
@@ -401,6 +444,7 @@ function submitGuess(){
   updateLetterStates(currentGuess,states);
   guessHistory.push({guess:currentGuess.toLowerCase(),states});
   updateRemainingCount();
+  if(activeGame) activeGame.remaining_counts.push(getRemainingWords().length);
   for(let i=0;i<WORD_LENGTH;i++){
     setTimeout(()=>{
       row[i].classList.add("flip");
@@ -600,13 +644,62 @@ function renderStatsCol(elId, data, label){
   }
 }
 
+function renderFirstWords(elId, words){
+  const el=document.getElementById(elId);
+  el.innerHTML="";
+  if(!words||!words.length){
+    const d=document.createElement("div");
+    d.className="fwno-data";
+    d.textContent="Need 3+ games per word";
+    el.appendChild(d);
+    return;
+  }
+  words.forEach(w=>{
+    const row=document.createElement("div");
+    row.className="fwrow";
+    row.innerHTML=`<span class="fwword">${w.word}</span><span class="fwavg">${Math.round(w.avgRemaining)}</span>`;
+    el.appendChild(row);
+  });
+}
+
+function renderExtraStats(me, overall){
+  // Possibilities Per Guess table
+  const ppgBody=document.getElementById("ppg-body");
+  ppgBody.innerHTML="";
+  const mePpgMap=Object.fromEntries((me.possibilitiesPerGuess||[]).map(p=>[p.guessNum,p.avgRemaining]));
+  const ovPpgMap=Object.fromEntries((overall.possibilitiesPerGuess||[]).map(p=>[p.guessNum,p.avgRemaining]));
+  const allNums=new Set([...Object.keys(mePpgMap),...Object.keys(ovPpgMap)].map(Number));
+  [...allNums].sort((a,b)=>a-b).forEach(g=>{
+    const meVal=mePpgMap[g];
+    const ovVal=ovPpgMap[g];
+    let meClass="ppg-me";
+    if(meVal!==undefined&&ovVal!==undefined){
+      if(meVal<ovVal) meClass="ppg-better";
+      else if(meVal>ovVal) meClass="ppg-worse";
+    }
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${g}</td><td class="${meClass}">${meVal!==undefined?Math.round(meVal):"—"}</td><td>${ovVal!==undefined?Math.round(ovVal):"—"}</td>`;
+    ppgBody.appendChild(tr);
+  });
+
+  // Best / Worst First Words
+  renderFirstWords("fw-best-me",me.bestFirstWords);
+  renderFirstWords("fw-best-overall",overall.bestFirstWords);
+  renderFirstWords("fw-worst-me",me.worstFirstWords);
+  renderFirstWords("fw-worst-overall",overall.worstFirstWords);
+
+  document.getElementById("stats-extra").style.display="";
+}
+
 async function loadStats(){
   const msg=document.getElementById("stats-msg");
   const cols=document.getElementById("stats-cols");
+  const extra=document.getElementById("stats-extra");
   msg.textContent="Loading...";
   msg.style.color="#9ca3af";
   msg.style.display="block";
   cols.style.display="none";
+  extra.style.display="none";
   try{
     const deviceId=getDeviceId();
     const r=await fetch(`https://wordle-theta-red.vercel.app/api/wordle-stats?deviceId=${encodeURIComponent(deviceId)}`);
@@ -614,6 +707,7 @@ async function loadStats(){
     const d=await r.json();
     renderStatsCol("col-me",d.me,"ME");
     renderStatsCol("col-overall",d.overall,"OVERALL");
+    renderExtraStats(d.me,d.overall);
     msg.style.display="none";
     cols.style.display="";
   }catch(e){

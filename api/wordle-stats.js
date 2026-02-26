@@ -3,6 +3,10 @@ import pg from "pg";
 const { Pool } = pg;
 let pool = null;
 
+// Minimum number of games a starting word must appear in before it qualifies
+// for Best / Worst First Word lists. Increase this as the game log grows.
+const MIN_FIRST_WORD_GAMES = 3;
+
 function getPool() {
   if (!pool) {
     const connectionString = process.env.NEON_DATABASE_URL;
@@ -33,6 +37,21 @@ function computeStreaks(outcomes) {
   return { currentStreak: current, bestStreak: best };
 }
 
+function processFirstWords(rows) {
+  return rows.map(r => ({
+    word: (r.first_word || "?").toLowerCase(),
+    uses: Number(r.uses),
+    avgRemaining: parseFloat(r.avg_remaining),
+  }));
+}
+
+function processPpg(rows) {
+  return rows.map(r => ({
+    guessNum: Number(r.guess_num),
+    avgRemaining: parseFloat(r.avg_remaining),
+  }));
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -45,9 +64,21 @@ export default async function handler(req, res) {
 
   const client = await getPool().connect();
   try {
-    // Run all four queries in parallel for speed.
-    const [meRes, overallDistRes, overallStartRes, overallStreakRes] = await Promise.all([
-      // All games for this device, ordered oldest-first for streak calculation.
+    // Run all queries in parallel for speed.
+    const [
+      meRes,
+      overallDistRes,
+      overallStartRes,
+      overallStreakRes,
+      meBestRes,
+      meWorstRes,
+      mePpgRes,
+      overallBestRes,
+      overallWorstRes,
+      overallPpgRes,
+    ] = await Promise.all([
+
+      // 1. All games for this device (streak + distribution + top starters).
       client.query(
         `SELECT guesses_count, outcome, guesses_json->>0 AS first_word
          FROM wordle_games
@@ -55,13 +86,15 @@ export default async function handler(req, res) {
          ORDER BY end_time ASC`,
         [deviceId]
       ),
-      // Aggregate counts for overall distribution.
+
+      // 2. Aggregate counts for overall distribution.
       client.query(
         `SELECT guesses_count, outcome, COUNT(*) AS cnt
          FROM wordle_games
          GROUP BY guesses_count, outcome`
       ),
-      // Top 5 starting words across all games.
+
+      // 3. Top 5 starting words across all games.
       client.query(
         `SELECT guesses_json->>0 AS first_word, COUNT(*) AS cnt
          FROM wordle_games
@@ -69,9 +102,89 @@ export default async function handler(req, res) {
          ORDER BY COUNT(*) DESC
          LIMIT 5`
       ),
-      // All outcomes in chronological order for overall streak calculation.
+
+      // 4. All outcomes in chronological order for overall streak.
       client.query(
         `SELECT outcome FROM wordle_games ORDER BY end_time ASC`
+      ),
+
+      // 5. Me – best first words (lowest avg remaining = most eliminating).
+      client.query(
+        `SELECT guesses_json->>0 AS first_word,
+                COUNT(*)::int AS uses,
+                ROUND(AVG((remaining_counts_json->>0)::float)::numeric, 1) AS avg_remaining
+         FROM wordle_games
+         WHERE device_id = $1 AND remaining_counts_json IS NOT NULL
+         GROUP BY guesses_json->>0
+         HAVING COUNT(*) >= $2
+         ORDER BY avg_remaining ASC
+         LIMIT 5`,
+        [deviceId, MIN_FIRST_WORD_GAMES]
+      ),
+
+      // 6. Me – worst first words (highest avg remaining).
+      client.query(
+        `SELECT guesses_json->>0 AS first_word,
+                COUNT(*)::int AS uses,
+                ROUND(AVG((remaining_counts_json->>0)::float)::numeric, 1) AS avg_remaining
+         FROM wordle_games
+         WHERE device_id = $1 AND remaining_counts_json IS NOT NULL
+         GROUP BY guesses_json->>0
+         HAVING COUNT(*) >= $2
+         ORDER BY avg_remaining DESC
+         LIMIT 5`,
+        [deviceId, MIN_FIRST_WORD_GAMES]
+      ),
+
+      // 7. Me – average remaining possibilities at each guess number.
+      client.query(
+        `SELECT t.idx::int AS guess_num,
+                ROUND(AVG(t.val::float)::numeric, 1) AS avg_remaining
+         FROM wordle_games,
+              jsonb_array_elements_text(remaining_counts_json) WITH ORDINALITY AS t(val, idx)
+         WHERE device_id = $1 AND remaining_counts_json IS NOT NULL
+         GROUP BY t.idx
+         ORDER BY t.idx`,
+        [deviceId]
+      ),
+
+      // 8. Overall – best first words.
+      client.query(
+        `SELECT guesses_json->>0 AS first_word,
+                COUNT(*)::int AS uses,
+                ROUND(AVG((remaining_counts_json->>0)::float)::numeric, 1) AS avg_remaining
+         FROM wordle_games
+         WHERE remaining_counts_json IS NOT NULL
+         GROUP BY guesses_json->>0
+         HAVING COUNT(*) >= $1
+         ORDER BY avg_remaining ASC
+         LIMIT 5`,
+        [MIN_FIRST_WORD_GAMES]
+      ),
+
+      // 9. Overall – worst first words.
+      client.query(
+        `SELECT guesses_json->>0 AS first_word,
+                COUNT(*)::int AS uses,
+                ROUND(AVG((remaining_counts_json->>0)::float)::numeric, 1) AS avg_remaining
+         FROM wordle_games
+         WHERE remaining_counts_json IS NOT NULL
+         GROUP BY guesses_json->>0
+         HAVING COUNT(*) >= $1
+         ORDER BY avg_remaining DESC
+         LIMIT 5`,
+        [MIN_FIRST_WORD_GAMES]
+      ),
+
+      // 10. Overall – average remaining possibilities at each guess number.
+      client.query(
+        `SELECT t.idx::int AS guess_num,
+                ROUND(AVG(t.val::float)::numeric, 1) AS avg_remaining
+         FROM wordle_games,
+              jsonb_array_elements_text(remaining_counts_json) WITH ORDINALITY AS t(val, idx)
+         WHERE remaining_counts_json IS NOT NULL
+         GROUP BY t.idx
+         ORDER BY t.idx`
       ),
     ]);
 
@@ -138,6 +251,9 @@ export default async function handler(req, res) {
         bestStreak,
         distribution: meDist,
         topStarters: meTopStarters,
+        bestFirstWords: processFirstWords(meBestRes.rows),
+        worstFirstWords: processFirstWords(meWorstRes.rows),
+        possibilitiesPerGuess: processPpg(mePpgRes.rows),
       },
       overall: {
         totalGames: overallTotal,
@@ -147,6 +263,9 @@ export default async function handler(req, res) {
         bestStreak: overallBestStreak,
         distribution: overallDist,
         topStarters: overallTopStarters,
+        bestFirstWords: processFirstWords(overallBestRes.rows),
+        worstFirstWords: processFirstWords(overallWorstRes.rows),
+        possibilitiesPerGuess: processPpg(overallPpgRes.rows),
       },
     });
   } finally {

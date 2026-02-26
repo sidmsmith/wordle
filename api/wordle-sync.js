@@ -55,6 +55,11 @@ function normalizeGame(rawGame) {
   const guesses = rawGame.guesses.map((guess) => String(guess).toLowerCase());
   const targetWord = String(rawGame.target_word).toLowerCase();
 
+  // Optional: array of remaining possible-word counts after each guess.
+  const remainingCounts = Array.isArray(rawGame.remaining_counts)
+    ? rawGame.remaining_counts.map(Number).filter(n => !isNaN(n))
+    : null;
+
   return {
     game: {
       client_game_id: String(rawGame.client_game_id),
@@ -64,7 +69,8 @@ function normalizeGame(rawGame) {
       target_word: targetWord,
       outcome,
       guesses_count: Number(rawGame.guesses_count || guesses.length),
-      guesses
+      guesses,
+      remaining_counts: remainingCounts
     }
   };
 }
@@ -81,9 +87,15 @@ async function ensureTable(client) {
       outcome VARCHAR(16) NOT NULL,
       guesses_count INTEGER NOT NULL,
       guesses_json JSONB NOT NULL,
+      remaining_counts_json JSONB,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `);
+
+  // Idempotent column addition for databases created before this column existed.
+  await client.query(`
+    ALTER TABLE wordle_games ADD COLUMN IF NOT EXISTS remaining_counts_json JSONB;
   `);
 
   await client.query(`
@@ -148,6 +160,10 @@ export default async function handler(req, res) {
         continue;
       }
 
+      const remainingJson = game.remaining_counts
+        ? JSON.stringify(game.remaining_counts)
+        : null;
+
       await client.query(
         `
           INSERT INTO wordle_games (
@@ -158,9 +174,10 @@ export default async function handler(req, res) {
             target_word,
             outcome,
             guesses_count,
-            guesses_json
+            guesses_json,
+            remaining_counts_json
           )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
           ON CONFLICT (client_game_id) DO UPDATE SET
             device_id = EXCLUDED.device_id,
             start_time = EXCLUDED.start_time,
@@ -169,6 +186,7 @@ export default async function handler(req, res) {
             outcome = EXCLUDED.outcome,
             guesses_count = EXCLUDED.guesses_count,
             guesses_json = EXCLUDED.guesses_json,
+            remaining_counts_json = COALESCE(EXCLUDED.remaining_counts_json, wordle_games.remaining_counts_json),
             updated_at = CURRENT_TIMESTAMP
         `,
         [
@@ -179,7 +197,8 @@ export default async function handler(req, res) {
           game.target_word,
           game.outcome,
           game.guesses_count,
-          JSON.stringify(game.guesses)
+          JSON.stringify(game.guesses),
+          remainingJson
         ]
       );
 
