@@ -897,9 +897,13 @@ function updateDifficultyButtons(){
 document.getElementById("diff-btns").addEventListener("click",e=>{
   const btn=e.target.closest(".diff-btn");
   if(!btn) return;
-  localStorage.setItem("wordle_difficulty",btn.dataset.value);
+  const value=btn.dataset.value;
+  localStorage.setItem("wordle_difficulty",value);
   updateDifficultyButtons();
   applyDifficultyUI();
+  // If no guesses have been made yet, update the current game session so
+  // the DB records the difficulty that was actually in effect when guessing began.
+  if(activeGame&&guessHistory.length===0) activeGame.difficulty=value;
 });
 
 /* ── Username modal ───────────────────────────────────────── */
