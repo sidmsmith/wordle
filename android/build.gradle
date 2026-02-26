@@ -22,6 +22,8 @@ allprojects {
         google()
         mavenCentral()
     }
+    // Build outputs go outside OneDrive to prevent sync corruption of APK binaries
+    buildDir = new File(System.getenv("LOCALAPPDATA") + "/WordleAndroidBuild/${rootProject.name}/${project.name}")
 }
 
 task clean(type: Delete) {
