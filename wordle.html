@@ -67,7 +67,9 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #words-close{background:none;border:none;color:#818384;font-size:1.1rem;cursor:pointer;padding:2px 4px;line-height:1;touch-action:manipulation}
 #words-close:hover{color:#fff}
 #words-grid{overflow-y:auto;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:5px}
-.wword{background:#2a2a2c;border-radius:3px;padding:5px 3px;text-align:center;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#fff}
+.wword{background:#2a2a2c;border-radius:3px;padding:5px 3px;text-align:center;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#fff;cursor:pointer;user-select:none;touch-action:pan-y}
+.wword:hover{background:#3a3a3c}
+.wword:active{background:#538d4e;color:#fff}
 /* ── Stats overlay ────────────────────────────────────────── */
 #stats-page{display:none;position:fixed;inset:0;background:#121213;z-index:100;flex-direction:column;align-items:center;overflow-y:auto}
 #stats-page.visible{display:flex}
@@ -600,6 +602,14 @@ function updateRemainingCount(){
   document.getElementById("remaining-btn").textContent=getRemainingWords().length;
 }
 
+function selectWord(word){
+  if(gameOver) return;
+  closeWordsModal();
+  // Clear any existing partial guess then type the word.
+  while(currentGuess.length>0) handleKeyInput("BACKSPACE");
+  for(const ch of word.toUpperCase()) handleKeyInput(ch);
+}
+
 function openWordsModal(){
   const words=getRemainingWords().slice().sort();
   const grid=document.getElementById("words-grid");
@@ -610,6 +620,12 @@ function openWordsModal(){
     const el=document.createElement("div");
     el.className="wword";
     el.textContent=w;
+    // Distinguish a tap from a scroll: reject if pointer moved more than 6px.
+    let pX=0,pY=0;
+    el.addEventListener("pointerdown",e=>{pX=e.clientX;pY=e.clientY;},{passive:true});
+    el.addEventListener("pointerup",e=>{
+      if(Math.hypot(e.clientX-pX,e.clientY-pY)<6) selectWord(w);
+    },{passive:true});
     grid.appendChild(el);
   });
   document.getElementById("words-modal").classList.add("open");
