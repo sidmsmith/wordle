@@ -54,6 +54,15 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .uchip:hover,.uchip:active{background:#3a3a3c;color:#fff}
 .uchip.guest{border-style:dashed;margin-top:2px}
 #user-divider{border:none;border-top:1px solid #3a3a3c;margin:8px 0 6px}
+#diff-section{margin-top:10px;padding-top:10px;border-top:1px solid #3a3a3c}
+#diff-label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;margin-bottom:5px}
+#diff-btns{display:flex;border:1px solid #3a3a3c;border-radius:4px;overflow:hidden}
+.diff-btn{flex:1;background:#1a1a1b;border:none;border-right:1px solid #3a3a3c;color:#565758;font-size:0.6rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:8px 3px;cursor:pointer;touch-action:manipulation;transition:background 0.15s,color 0.15s}
+.diff-btn:last-child{border-right:none}
+.diff-btn.active[data-value="normal"]{background:#538d4e;color:#fff}
+.diff-btn.active[data-value="hard"]{background:#b59f3b;color:#fff}
+.diff-btn.active[data-value="superhard"]{background:#c0392b;color:#fff}
+#diff-desc{font-size:0.58rem;color:#565758;text-align:center;margin-top:5px;min-height:1.4em;font-style:italic;line-height:1.4}
 #user-save{width:100%;margin-top:12px;background:#6aaa64;color:#fff;border:none;border-radius:4px;padding:10px;font-size:0.9rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
 #user-save:hover{background:#5a9a54}
 #user-save:active{transform:scale(0.98)}
@@ -176,6 +185,15 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
   <div id="user-warning"></div>
   <div id="user-chips-label">SELECT EXISTING</div>
   <div id="user-chips"></div>
+  <div id="diff-section">
+    <div id="diff-label">DIFFICULTY</div>
+    <div id="diff-btns">
+      <button class="diff-btn" data-value="normal">NORMAL</button>
+      <button class="diff-btn" data-value="hard">HARD</button>
+      <button class="diff-btn" data-value="superhard">SUPER HARD</button>
+    </div>
+    <div id="diff-desc"></div>
+  </div>
   <button id="user-save">SAVE</button>
 </div>
 </div>
@@ -311,11 +329,16 @@ function getUsername(){
   return localStorage.getItem("wordle_username")||"";
 }
 
+function getDifficulty(){
+  return localStorage.getItem("wordle_difficulty")||"normal";
+}
+
 function createGameSession(){
   activeGame={
     client_game_id:generateClientId(),
     device_id:getDeviceId(),
     username:getUsername()||null,
+    difficulty:getDifficulty(),
     start_time:localISOString(new Date()),
     end_time:null,
     target_word:targetWord.toLowerCase(),
@@ -403,7 +426,7 @@ function initGame(){
   }
   updateKeyboard();
   createGameSession();
-  updateRemainingCount();
+  applyDifficultyUI();
 }
 
 function updateKeyboard(){
@@ -471,10 +494,12 @@ function updateLetterStates(guess,states){
 function submitGuess(){
   if(currentGuess.length!==WORD_LENGTH)return;
   if(!WORDS.includes(currentGuess.toLowerCase())){
-    document.getElementById("message").textContent="Not in word list";
-    setTimeout(()=>{
-      document.getElementById("message").textContent="";
-    },2000);
+    showMessage("Not in word list");
+    return;
+  }
+  const hardErr=checkHardModeConstraints(currentGuess);
+  if(hardErr){
+    showMessage(hardErr);
     return;
   }
   recordGuess(currentGuess.toLowerCase());
@@ -496,14 +521,14 @@ function submitGuess(){
     gameOver=true;
     finalizeGame("win");
     setTimeout(()=>{
-      document.getElementById("message").textContent="You won!";
+      showMessage("You won!",0);
       document.getElementById("new-game-btn").style.display="block";
     },600);
   }else if(currentRow===MAX_GUESSES-1){
     gameOver=true;
     finalizeGame("loss");
     setTimeout(()=>{
-      document.getElementById("message").textContent=`You lost! The word was ${targetWord.toUpperCase()}`;
+      showMessage(`You lost! The word was ${targetWord.toUpperCase()}`,0);
       document.getElementById("new-game-btn").style.display="block";
     },600);
   }else{
@@ -598,14 +623,97 @@ function getRemainingWords(){
   });
 }
 
+let _msgTimer=null;
+function showMessage(text,duration=2000){
+  const el=document.getElementById("message");
+  el.textContent=text;
+  clearTimeout(_msgTimer);
+  if(duration>0) _msgTimer=setTimeout(()=>{el.textContent="";},duration);
+}
+
+function ordinal(n){
+  const s=["th","st","nd","rd"];
+  const v=n%100;
+  return n+(s[(v-20)%10]||s[v]||s[0]);
+}
+
+function checkHardModeConstraints(guess){
+  const difficulty=getDifficulty();
+  if(difficulty==="normal"||!guessHistory.length) return null;
+  const g=guess.toLowerCase();
+
+  // Collect green (required position) and yellow (required letter + forbidden positions) constraints.
+  const requiredPositions={};
+  const requiredLetters={};
+  for(const {guess:pg,states} of guessHistory){
+    for(let i=0;i<states.length;i++){
+      if(states[i]==="correct"){
+        requiredPositions[i]=pg[i];
+      }else if(states[i]==="present"){
+        if(!requiredLetters[pg[i]]) requiredLetters[pg[i]]=new Set();
+        requiredLetters[pg[i]].add(i);
+      }
+    }
+  }
+
+  // Green constraints (Hard + Super Hard): must reuse in same position.
+  for(const [pos,letter] of Object.entries(requiredPositions)){
+    if(g[Number(pos)]!==letter){
+      return `${ordinal(Number(pos)+1)} letter must be ${letter.toUpperCase()}`;
+    }
+  }
+
+  // Yellow constraints (Hard + Super Hard): letter must appear somewhere.
+  // Super Hard adds: must NOT be placed in its previous yellow position(s).
+  for(const [letter,forbiddenPositions] of Object.entries(requiredLetters)){
+    if(!g.includes(letter)){
+      return `Guess must contain ${letter.toUpperCase()}`;
+    }
+    if(difficulty==="superhard"){
+      for(const pos of forbiddenPositions){
+        if(g[pos]===letter){
+          return `${letter.toUpperCase()} cannot be in position ${pos+1}`;
+        }
+      }
+    }
+  }
+
+  // Gray constraints (Super Hard only): must not reuse eliminated letters.
+  if(difficulty==="superhard"){
+    for(const [letter,state] of Object.entries(letterStates)){
+      if(state==="absent"&&g.includes(letter.toLowerCase())){
+        return `Guess cannot contain ${letter.toUpperCase()}`;
+      }
+    }
+  }
+
+  return null;
+}
+
+function applyDifficultyUI(){
+  const d=getDifficulty();
+  const btn=document.getElementById("remaining-btn");
+  if(d==="superhard"){
+    btn.style.visibility="hidden";
+  }else{
+    btn.style.visibility="";
+    updateRemainingCount();
+  }
+}
+
 function updateRemainingCount(){
   document.getElementById("remaining-btn").textContent=getRemainingWords().length;
 }
 
 function selectWord(word){
   if(gameOver) return;
+  const err=checkHardModeConstraints(word);
+  if(err){
+    closeWordsModal();
+    showMessage(err);
+    return;
+  }
   closeWordsModal();
-  // Clear any existing partial guess then type the word.
   while(currentGuess.length>0) handleKeyInput("BACKSPACE");
   for(const ch of word.toUpperCase()) handleKeyInput(ch);
 }
@@ -635,7 +743,14 @@ function closeWordsModal(){
   document.getElementById("words-modal").classList.remove("open");
 }
 
-document.getElementById("remaining-btn").addEventListener("click",openWordsModal);
+document.getElementById("remaining-btn").addEventListener("click",()=>{
+  const d=getDifficulty();
+  if(d==="hard"){
+    showMessage("Word list disabled in Hard Mode");
+    return;
+  }
+  openWordsModal();
+});
 document.getElementById("words-close").addEventListener("click",closeWordsModal);
 document.getElementById("words-backdrop").addEventListener("click",closeWordsModal);
 
@@ -764,6 +879,29 @@ async function loadStats(){
   }
 }
 
+/* ── Difficulty control ───────────────────────────────────── */
+const DIFF_DESCS={
+  normal:"No restrictions on guesses",
+  hard:"Must use revealed green & yellow letters",
+  superhard:"Hard Mode + avoid gray letters & fix yellow positions"
+};
+
+function updateDifficultyButtons(){
+  const d=getDifficulty();
+  document.querySelectorAll(".diff-btn").forEach(btn=>{
+    btn.classList.toggle("active",btn.dataset.value===d);
+  });
+  document.getElementById("diff-desc").textContent=DIFF_DESCS[d]||"";
+}
+
+document.getElementById("diff-btns").addEventListener("click",e=>{
+  const btn=e.target.closest(".diff-btn");
+  if(!btn) return;
+  localStorage.setItem("wordle_difficulty",btn.dataset.value);
+  updateDifficultyButtons();
+  applyDifficultyUI();
+});
+
 /* ── Username modal ───────────────────────────────────────── */
 async function openUserModal(){
   const input=document.getElementById("user-input");
@@ -773,6 +911,7 @@ async function openUserModal(){
   input.value=current.toUpperCase();
   warning.textContent="";
   chips.innerHTML="";
+  updateDifficultyButtons();
   document.getElementById("user-modal").classList.add("open");
   input.focus();
 

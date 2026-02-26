@@ -65,6 +65,11 @@ function normalizeGame(rawGame) {
     ? String(rawGame.username).trim().toLowerCase().slice(0, 64) || null
     : null;
 
+  // Optional: difficulty level (normal / hard / superhard).
+  const VALID_DIFFICULTIES = ["normal", "hard", "superhard"];
+  const rawDiff = rawGame.difficulty ? String(rawGame.difficulty).trim().toLowerCase() : null;
+  const difficulty = VALID_DIFFICULTIES.includes(rawDiff) ? rawDiff : "normal";
+
   return {
     game: {
       client_game_id: String(rawGame.client_game_id),
@@ -76,7 +81,8 @@ function normalizeGame(rawGame) {
       guesses_count: Number(rawGame.guesses_count || guesses.length),
       guesses,
       remaining_counts: remainingCounts,
-      username
+      username,
+      difficulty
     }
   };
 }
@@ -103,6 +109,7 @@ async function ensureTable(client) {
   // Idempotent column additions for databases created before these columns existed.
   await client.query(`ALTER TABLE wordle_games ADD COLUMN IF NOT EXISTS remaining_counts_json JSONB;`);
   await client.query(`ALTER TABLE wordle_games ADD COLUMN IF NOT EXISTS username VARCHAR(64);`);
+  await client.query(`ALTER TABLE wordle_games ADD COLUMN IF NOT EXISTS difficulty VARCHAR(16);`);
 
   await client.query(`
     CREATE INDEX IF NOT EXISTS idx_wordle_games_device_id
@@ -182,9 +189,10 @@ export default async function handler(req, res) {
             guesses_count,
             guesses_json,
             remaining_counts_json,
-            username
+            username,
+            difficulty
           )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
           ON CONFLICT (client_game_id) DO UPDATE SET
             device_id = EXCLUDED.device_id,
             start_time = EXCLUDED.start_time,
@@ -195,6 +203,7 @@ export default async function handler(req, res) {
             guesses_json = EXCLUDED.guesses_json,
             remaining_counts_json = COALESCE(EXCLUDED.remaining_counts_json, wordle_games.remaining_counts_json),
             username = COALESCE(EXCLUDED.username, wordle_games.username),
+            difficulty = EXCLUDED.difficulty,
             updated_at = CURRENT_TIMESTAMP
         `,
         [
@@ -207,7 +216,8 @@ export default async function handler(req, res) {
           game.guesses_count,
           JSON.stringify(game.guesses),
           remainingJson,
-          game.username
+          game.username,
+          game.difficulty
         ]
       );
 
