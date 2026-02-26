@@ -29,12 +29,6 @@ html = html.replace(
   `fetch(\`${BASE}/api/wordle-stats?deviceId=`
 );
 
-// 2. Remove service-worker registration — assets are bundled in the APK, no SW needed.
-html = html.replace(
-  /if\("serviceWorker" in navigator\)\{[\s\S]*?navigator\.serviceWorker\.register\("\/sw\.js"\)\.catch\(\(\)=>\{\}\);\s*\}\s*\}/,
-  "// Native app: service worker not used"
-);
-
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");
 
 // --- Binary / static assets ---

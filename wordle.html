@@ -526,12 +526,6 @@ window.addEventListener("online",()=>{
   trySyncPendingGames();
 });
 
-if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("/sw.js").catch(()=>{});
-  });
-}
-
 // ── Remaining words ────────────────────────────────────────────────────────
 
 function getRemainingWords(){
