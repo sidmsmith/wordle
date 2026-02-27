@@ -1354,15 +1354,26 @@ function mpSubscribeRoom(roomId){
     const iWon=(d.winner===getUsername().toLowerCase());
     mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count);
   });
-  mpRoomChannel.subscribe("room-abandoned",()=>{
-    if(mpRoomId){
+  mpRoomChannel.subscribe("room-abandoned",(msg)=>{
+    const d=JSON.parse(msg.data||"{}");
+    const abandonedRoom=d.room_id||roomId;
+    if(mpRoomId&&mpRoomId===abandonedRoom){
+      // Player had already accepted — close the game.
       mpRoomId=null;
       mpRole=null;
       clearTimeout(mpGameTimer);
+      mpUnsubscribeRoom();
       showMessage("Host cancelled the game",2500);
       mpShowView("lobby");
       document.getElementById("mp-modal").classList.add("open");
       initGame();
+    }else{
+      // Player had not yet accepted — remove the invite banner and unsubscribe.
+      mpPendingInvites=mpPendingInvites.filter(inv=>inv.room_id!==abandonedRoom);
+      mpUnsubscribeRoom();
+      if(document.getElementById("mp-modal").classList.contains("open")){
+        mpRenderInvitations();
+      }
     }
   });
 }
