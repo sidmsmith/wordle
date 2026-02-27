@@ -225,6 +225,11 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div id="game-container">
 <div id="header">
 <div id="hdr-left">
+<button id="mp-btn" aria-label="Multiplayer">
+<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+<path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+</svg>
+</button>
 <button id="remaining-btn" aria-label="Remaining words"></button>
 </div>
 <h1>WORDLE</h1>
@@ -234,11 +239,6 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <rect x="3" y="12" width="4" height="9" rx="1"/>
 <rect x="10" y="6" width="4" height="15" rx="1"/>
 <rect x="17" y="9" width="4" height="12" rx="1"/>
-</svg>
-</button>
-<button id="mp-btn" aria-label="Multiplayer">
-<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-<path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
 </svg>
 </button>
 </div>
@@ -1202,14 +1202,22 @@ function mpGetAbly(){
 function mpSubscribeLobby(){
   if(mpLobbyChannel) return;
   mpLobbyChannel=mpGetAbly().channels.get("wordle-lobby");
-  mpLobbyChannel.subscribe("lobby-update",()=>mpLoadLobbyPlayers());
+  mpLobbyChannel.subscribe("lobby-update",()=>{
+    // Only refresh the visible list if the modal is currently open.
+    if(document.getElementById("mp-modal").classList.contains("open")) mpLoadLobbyPlayers();
+  });
   mpLobbyChannel.subscribe("invite",(msg)=>{
     const d=JSON.parse(msg.data);
     if(d.invitee===getUsername().toLowerCase()){
       mpPendingInvites.push({host:d.host,room_id:d.room_id});
-      mpRenderInvitations();
-      // Subscribe to the room channel to receive player-status and game-start events.
       mpSubscribeRoom(d.room_id);
+      const modal=document.getElementById("mp-modal");
+      if(!modal.classList.contains("open")){
+        // Auto-open the modal so the invited player sees the banner.
+        openMpModal();
+      }else{
+        mpRenderInvitations();
+      }
     }
   });
 }
@@ -1267,12 +1275,13 @@ async function openMpModal(){
   await mpLoadAbly();
   const u=getUsername();
   if(!u){openUserModal();return;}
-  mpPendingInvites=[];
+  // Don't reset pending invites here — they may have arrived before the modal opened.
   mpSelectedPlayers.clear();
   mpShowView("lobby");
   document.getElementById("mp-modal").classList.add("open");
   mpStartHeartbeat();
   mpSubscribeLobby();
+  mpRenderInvitations();
   await mpLoadLobbyPlayers();
 }
 
@@ -1557,7 +1566,12 @@ initGame();
 trySyncPendingGames();
 
 // Auto-prompt for username on load if none stored.
-if(!getUsername()) openUserModal();
+if(!getUsername()){
+  openUserModal();
+}else{
+  // Background Ably subscription so invite banners appear even when the modal is closed.
+  mpLoadAbly().then(()=>mpSubscribeLobby()).catch(()=>{});
+}
 </script>
 </body>
 </html>
