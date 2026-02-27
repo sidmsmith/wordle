@@ -68,13 +68,41 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
-      // Players seen within the last 15 seconds are considered online.
-      const { rows } = await client.query(
-        `SELECT username FROM multiplayer_lobby
-         WHERE last_seen > NOW() - INTERVAL '15 seconds'
-         ORDER BY username ASC`
-      );
-      return res.status(200).json({ players: rows.map((r) => r.username) });
+      // Return all known users with status:
+      //   available = recent heartbeat (last 15s) — in lobby or solo game
+      //   playing   = currently in an active multiplayer room
+      //   offline   = not seen recently
+      const { rows } = await client.query(`
+        SELECT
+          u.username,
+          CASE
+            WHEN l.last_seen > NOW() - INTERVAL '15 seconds' THEN 'available'
+            WHEN mp.username IS NOT NULL THEN 'playing'
+            ELSE 'offline'
+          END AS status
+        FROM (
+          SELECT DISTINCT LOWER(username) AS username
+          FROM wordle_games
+          WHERE username IS NOT NULL AND username <> ''
+          UNION
+          SELECT username FROM multiplayer_lobby
+        ) u
+        LEFT JOIN multiplayer_lobby l ON l.username = u.username
+        LEFT JOIN (
+          SELECT DISTINCT mp.username
+          FROM multiplayer_players mp
+          JOIN multiplayer_rooms mr ON mr.id = mp.room_id
+          WHERE mr.status = 'active' AND mp.status = 'playing'
+        ) mp ON mp.username = u.username
+        ORDER BY
+          CASE
+            WHEN l.last_seen > NOW() - INTERVAL '15 seconds' THEN 0
+            WHEN mp.username IS NOT NULL THEN 1
+            ELSE 2
+          END,
+          u.username ASC
+      `);
+      return res.status(200).json({ players: rows });
     }
 
     return res.status(405).json({ error: "Method not allowed" });

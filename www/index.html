@@ -186,9 +186,16 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 /* Dynamically-rendered player rows (lobby) */
 .mp-prow{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#2a2a2c;border:1px solid #3a3a3c;border-radius:4px;cursor:pointer;touch-action:manipulation;user-select:none}
 .mp-prow.sel{border-color:#538d4e;background:#1b2b1b}.mp-prow:hover{background:#333}
+.mp-prow.unavail{cursor:default;opacity:0.5}.mp-prow.unavail:hover{background:#2a2a2c}
+.mp-prow-left{display:flex;align-items:center;gap:8px}
 .mp-prow-name{font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#fff}
 .mp-prow-chk{font-size:0.85rem;color:#538d4e;font-weight:700;opacity:0}
 .mp-prow.sel .mp-prow-chk{opacity:1}
+.mp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mp-dot.available{background:#538d4e}
+.mp-dot.playing{background:#b59f3b}
+.mp-dot.offline{background:#565758}
+.mp-prow-st{font-size:0.55rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#565758}
 /* Waiting-room rows */
 .mp-wrow{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#2a2a2c;border-radius:4px}
 .mp-wrow-name{font-size:0.78rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#fff}
@@ -1316,29 +1323,41 @@ async function mpLoadLobbyPlayers(){
     const r=await fetch(MP_HEARTBEAT_URL);
     const d=await r.json();
     const me=getUsername().toLowerCase();
-    const others=(d.players||[]).filter(p=>p!==me);
+    const others=(d.players||[]).filter(p=>p.username!==me);
     const statusEl=document.getElementById("mp-lobby-status");
     const secEl=document.getElementById("mp-sec-online");
     const listEl=document.getElementById("mp-lobby-list");
     listEl.innerHTML="";
     if(!others.length){
       statusEl.style.display="block";
-      statusEl.textContent="No other players online right now.";
+      statusEl.textContent="No other players found.";
       secEl.style.display="none";
     }else{
       statusEl.style.display="none";
       secEl.style.display="block";
-      others.forEach(p=>{
+      const stLabel={available:"Available",playing:"In game",offline:"Offline"};
+      others.forEach(({username:p,status})=>{
+        const avail=status==="available";
         const row=document.createElement("div");
-        row.className="mp-prow"+(mpSelectedPlayers.has(p)?" sel":"");
+        row.className="mp-prow"+(avail&&mpSelectedPlayers.has(p)?" sel":"")+(avail?"":" unavail");
         row.dataset.player=p;
-        row.innerHTML=`<span class="mp-prow-name">${p.toUpperCase()}</span><span class="mp-prow-chk">✓</span>`;
-        row.addEventListener("click",()=>{
-          if(mpSelectedPlayers.has(p)) mpSelectedPlayers.delete(p);
-          else mpSelectedPlayers.add(p);
-          row.classList.toggle("sel",mpSelectedPlayers.has(p));
-          document.getElementById("mp-invite-btn").disabled=mpSelectedPlayers.size===0;
-        });
+        row.innerHTML=`
+          <div class="mp-prow-left">
+            <span class="mp-dot ${status}"></span>
+            <span class="mp-prow-name">${p.toUpperCase()}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="mp-prow-st">${stLabel[status]||status}</span>
+            <span class="mp-prow-chk">✓</span>
+          </div>`;
+        if(avail){
+          row.addEventListener("click",()=>{
+            if(mpSelectedPlayers.has(p)) mpSelectedPlayers.delete(p);
+            else mpSelectedPlayers.add(p);
+            row.classList.toggle("sel",mpSelectedPlayers.has(p));
+            document.getElementById("mp-invite-btn").disabled=mpSelectedPlayers.size===0;
+          });
+        }
         listEl.appendChild(row);
       });
     }
@@ -1547,13 +1566,16 @@ document.getElementById("mp-invite-btn").addEventListener("click",mpInvitePlayer
 document.getElementById("mp-cancel-btn").addEventListener("click",mpCancelRoom);
 document.getElementById("mp-start-btn").addEventListener("click",mpStartRound);
 document.getElementById("mp-win-rematch").addEventListener("click",async()=>{
+  const wasHost=mpRole==="host";
+  const lastPlayers=mpLastRematch?[...mpLastRematch.players]:[];
   mpCloseWinModal();
   await openMpModal();
-  if(mpLastRematch&&mpRole==="host"){
-    mpLastRematch.players.forEach(p=>mpSelectedPlayers.add(p));
-    await mpLoadLobbyPlayers();
-    document.getElementById("mp-invite-btn").disabled=mpSelectedPlayers.size===0;
+  if(wasHost&&lastPlayers.length){
+    // Host auto-re-invites the same players immediately.
+    lastPlayers.forEach(p=>mpSelectedPlayers.add(p));
+    await mpInvitePlayers();
   }
+  // Non-host players just open the lobby and wait for the host's auto-invite.
 });
 document.getElementById("mp-win-close").addEventListener("click",()=>{
   mpCloseWinModal();
