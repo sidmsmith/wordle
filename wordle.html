@@ -1134,7 +1134,13 @@ async function openUserModal(){
   updateDifficultyButtons();
   populateThemePickers();
   document.getElementById("user-modal").classList.add("open");
-  input.focus();
+  // Only auto-focus the text input for first-time users (no username yet).
+  // For returning users, focus Save so the mobile keyboard doesn't auto-open.
+  if(current){
+    document.getElementById("user-save").focus();
+  }else{
+    input.focus();
+  }
 
   // Fetch existing users and render chips.
   try{
