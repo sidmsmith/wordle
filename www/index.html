@@ -42,6 +42,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #remaining-btn:hover,#remaining-btn:active{color:#fff}
 #gear-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
 #gear-btn:hover,#gear-btn:active{color:#fff}
+#gear-btn.mp-locked{color:#3a3a3c!important;cursor:not-allowed;opacity:0.4}
 /* ── Theme color picker ───────────────────────────────────── */
 #theme-section{margin-top:10px;padding-top:10px;border-top:1px solid #3a3a3c}
 #theme-label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;text-align:center;margin-bottom:8px}
@@ -1124,11 +1125,6 @@ function updateDifficultyButtons(){
 document.getElementById("diff-btns").addEventListener("click",e=>{
   const btn=e.target.closest(".diff-btn");
   if(!btn) return;
-  // Block changes mid-multiplayer to prevent difficulty cheating.
-  if(mpRoomId){
-    showMessage("Cannot change difficulty during a multiplayer game",2200);
-    return;
-  }
   const value=btn.dataset.value;
   localStorage.setItem("wordle_difficulty",value);
   updateDifficultyButtons();
@@ -1139,7 +1135,16 @@ document.getElementById("diff-btns").addEventListener("click",e=>{
 });
 
 /* ── Username modal ───────────────────────────────────────── */
+function updateGearBtn(){
+  const btn=document.getElementById("gear-btn");
+  const locked=!!mpRoomId;
+  btn.classList.toggle("mp-locked",locked);
+  btn.title=locked?"Settings locked during multiplayer game":"";
+}
+
 async function openUserModal(){
+  // Silently block settings during an active multiplayer game.
+  if(mpRoomId) return;
   const input=document.getElementById("user-input");
   const warning=document.getElementById("user-warning");
   const chips=document.getElementById("user-chips");
@@ -1388,6 +1393,7 @@ function mpSubscribeRoom(roomId){
       mpRole=null;
       clearTimeout(mpGameTimer);
       mpUnsubscribeRoom();
+      updateGearBtn();
       showMessage("Host cancelled the game",2500);
       mpShowView("lobby");
       document.getElementById("mp-modal").classList.add("open");
@@ -1668,6 +1674,7 @@ async function mpStartRound(){
 // ── Game flow ─────────────────────────────────────────────────────────────────
 function mpStartGame(word,roomId){
   mpRoomId=roomId;
+  updateGearBtn();
   document.getElementById("mp-modal").classList.remove("open");
   mpStopLobbyRefresh();
   // Keep lobby subscription and heartbeat alive — heartbeat keeps us showing
@@ -1698,6 +1705,7 @@ function mpTimeout(){
   }).catch(()=>{});
   mpRoomId=null;mpRole=null;
   mpUnsubscribeRoom();
+  updateGearBtn();
   initGame();
 }
 
@@ -1718,6 +1726,7 @@ function mpCloseWinModal(){
   document.getElementById("mp-win-modal").classList.remove("open");
   mpRoomId=null;mpRole=null;mpWinReported=false;
   mpUnsubscribeRoom();
+  updateGearBtn();
 }
 
 // ── View switcher ─────────────────────────────────────────────────────────────
