@@ -1378,6 +1378,10 @@ function mpSubscribeRoom(roomId){
   });
   mpRoomChannel.subscribe("game-start",(msg)=>{
     const d=JSON.parse(msg.data);
+    // Only start if this player has accepted (mpRoomId is set) or is the host.
+    // Guards against force-starting a player who was invited but never accepted
+    // because the host started with a different subset of accepted players.
+    if(mpRoomId!==d.room_id) return;
     // Store everyone else in this game so any player can initiate a rematch.
     const me=getUsername().toLowerCase();
     mpLastRematch={players:(d.players||[]).filter(p=>p!==me)};
@@ -1582,6 +1586,11 @@ async function mpAcceptInvite(inv,idx){
 async function mpDeclineInvite(inv,idx){
   mpPendingInvites.splice(idx,1);
   mpRenderInvitations();
+  // Unsubscribe from the room channel so a game-start for this room
+  // does not force-start a player who declined.
+  if(mpRoomChannel&&mpRoomChannel.name==="wordle-room-"+inv.room_id){
+    mpUnsubscribeRoom();
+  }
   try{
     await fetch(MP_ROOM_URL,{
       method:"PATCH",
