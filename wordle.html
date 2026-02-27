@@ -1411,7 +1411,8 @@ async function openMpModal(){
 function closeMpModal(){
   document.getElementById("mp-modal").classList.remove("open");
   mpStopLobbyRefresh();
-  mpUnsubscribeLobby();
+  // Do NOT unsubscribe from lobby — keep it alive so future invites arrive
+  // even when the modal is closed.
   if(!mpRoomId) mpUnsubscribeRoom();
 }
 
@@ -1639,8 +1640,9 @@ async function mpStartRound(){
 function mpStartGame(word,roomId){
   mpRoomId=roomId;
   document.getElementById("mp-modal").classList.remove("open");
-  mpStopHeartbeat();
-  mpUnsubscribeLobby();
+  mpStopLobbyRefresh();
+  // Keep lobby subscription and heartbeat alive — heartbeat keeps us showing
+  // as "playing" (via the DB room status), and lobby stays ready for future invites.
   initGame({word,multiplayer:true});
 }
 
