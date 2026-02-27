@@ -1349,9 +1349,13 @@ function mpSubscribeLobby(){
     if(d.invitee===getUsername().toLowerCase()){
       mpPendingInvites.push({host:d.host,room_id:d.room_id});
       mpSubscribeRoom(d.room_id);
+      // If the winner modal is showing (e.g. player is on the rematch screen),
+      // dismiss it first so the invite banner is immediately visible.
+      if(document.getElementById("mp-win-modal").classList.contains("open")){
+        mpCloseWinModal();
+      }
       const modal=document.getElementById("mp-modal");
       if(!modal.classList.contains("open")){
-        // Auto-open the modal so the invited player sees the banner.
         openMpModal();
       }else{
         mpRenderInvitations();
