@@ -1233,9 +1233,7 @@ function mpSubscribeRoom(roomId){
   mpRoomChannel.subscribe("player-won",(msg)=>{
     const d=JSON.parse(msg.data);
     const iWon=(d.winner===getUsername().toLowerCase());
-    if(!iWon||!mpWinReported){
-      mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count);
-    }
+    mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count);
   });
   mpRoomChannel.subscribe("room-abandoned",()=>{
     if(mpRoomId){
