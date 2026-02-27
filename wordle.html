@@ -1252,6 +1252,8 @@ function saveUsername(){
   localStorage.setItem(THEME_KEY,JSON.stringify(theme));
   applyTheme(theme);
   closeUserModal();
+  // Ensure background heartbeat is running (first-time users won't have it yet).
+  mpLoadAbly().then(()=>{ mpSubscribeLobby(); mpStartBgHeartbeat(); }).catch(()=>{});
   // Refresh stats if the stats page is open.
   if(document.getElementById("stats-page").classList.contains("visible")){
     loadStats();
@@ -1388,7 +1390,8 @@ async function openMpModal(){
   mpSelectedPlayers.clear();
   mpShowView("lobby");
   document.getElementById("mp-modal").classList.add("open");
-  mpStartHeartbeat();
+  // Heartbeat is already running in background; just start the lobby list refresh.
+  mpStartLobbyRefresh();
   mpSubscribeLobby();
   mpRenderInvitations();
   await mpLoadLobbyPlayers();
@@ -1396,22 +1399,40 @@ async function openMpModal(){
 
 function closeMpModal(){
   document.getElementById("mp-modal").classList.remove("open");
-  mpStopHeartbeat();
+  mpStopLobbyRefresh();
   mpUnsubscribeLobby();
   if(!mpRoomId) mpUnsubscribeRoom();
 }
 
-function mpStartHeartbeat(){
+// ── Background heartbeat (runs whenever app is in foreground) ─────────────────
+function mpStartBgHeartbeat(){
+  if(mpHeartbeatTimer) return; // already running
   mpSendHeartbeat();
   mpHeartbeatTimer=setInterval(mpSendHeartbeat,5000);
-  // Independently refresh the lobby list every 10 seconds so status
-  // changes (online/offline) are always reflected even if Ably events are missed.
+}
+
+function mpStopBgHeartbeat(){
+  clearInterval(mpHeartbeatTimer);
+  mpHeartbeatTimer=null;
+}
+
+// Pause when tab/app goes to background, resume when it comes back.
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){
+    mpStopBgHeartbeat();
+  }else{
+    if(getUsername()) mpStartBgHeartbeat();
+  }
+});
+
+// ── Lobby list refresh (only while modal is open) ─────────────────────────────
+function mpStartLobbyRefresh(){
   mpLobbyRefreshTimer=setInterval(mpLoadLobbyPlayers,10000);
 }
 
-function mpStopHeartbeat(){
-  clearInterval(mpHeartbeatTimer);
+function mpStopLobbyRefresh(){
   clearInterval(mpLobbyRefreshTimer);
+  mpLobbyRefreshTimer=null;
 }
 
 async function mpSendHeartbeat(){
@@ -1697,8 +1718,12 @@ trySyncPendingGames();
 if(!getUsername()){
   openUserModal();
 }else{
-  // Background Ably subscription so invite banners appear even when the modal is closed.
-  mpLoadAbly().then(()=>mpSubscribeLobby()).catch(()=>{});
+  // Background Ably subscription + heartbeat so the user appears green
+  // in others' lobbies whenever the app is in the foreground.
+  mpLoadAbly().then(()=>{
+    mpSubscribeLobby();
+    mpStartBgHeartbeat();
+  }).catch(()=>{});
 }
 </script>
 </body>

@@ -76,8 +76,8 @@ export default async function handler(req, res) {
         SELECT
           u.username,
           CASE
-            WHEN l.last_seen > NOW() - INTERVAL '15 seconds' THEN 'available'
             WHEN mp.username IS NOT NULL THEN 'playing'
+            WHEN l.last_seen > NOW() - INTERVAL '15 seconds' THEN 'available'
             ELSE 'offline'
           END AS status
         FROM (
