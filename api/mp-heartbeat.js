@@ -45,20 +45,27 @@ export default async function handler(req, res) {
     await client.query(`
       CREATE TABLE IF NOT EXISTS multiplayer_lobby (
         username VARCHAR(64) PRIMARY KEY,
-        last_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        last_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        difficulty VARCHAR(16)
       )
+    `);
+    await client.query(`
+      ALTER TABLE multiplayer_lobby ADD COLUMN IF NOT EXISTS difficulty VARCHAR(16)
     `);
 
     if (req.method === "POST") {
       const { username } = req.body || {};
       if (!username) return res.status(400).json({ error: "username required" });
+      const { difficulty } = req.body || {};
       const u = username.toLowerCase();
+      const validDiffs = ["normal", "hard", "superhard"];
+      const diff = validDiffs.includes(difficulty) ? difficulty : "normal";
 
       await client.query(
-        `INSERT INTO multiplayer_lobby (username, last_seen)
-         VALUES ($1, NOW())
-         ON CONFLICT (username) DO UPDATE SET last_seen = NOW()`,
-        [u]
+        `INSERT INTO multiplayer_lobby (username, last_seen, difficulty)
+         VALUES ($1, NOW(), $2)
+         ON CONFLICT (username) DO UPDATE SET last_seen = NOW(), difficulty = $2`,
+        [u, diff]
       );
 
       // Notify all lobby subscribers that the player list changed.
@@ -79,7 +86,8 @@ export default async function handler(req, res) {
             WHEN mp.username IS NOT NULL THEN 'playing'
             WHEN l.last_seen > NOW() - INTERVAL '15 seconds' THEN 'available'
             ELSE 'offline'
-          END AS status
+          END AS status,
+          COALESCE(l.difficulty, 'normal') AS difficulty
         FROM (
           SELECT DISTINCT LOWER(username) AS username
           FROM wordle_games

@@ -214,6 +214,10 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .mp-dot.playing{background:#b59f3b}
 .mp-dot.offline{background:#565758}
 .mp-prow-st{font-size:0.55rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#565758}
+.mp-diff-badge{font-size:0.55rem;font-weight:700;letter-spacing:0.04em;padding:1px 4px;border-radius:3px;flex-shrink:0}
+.mp-diff-badge.normal{color:#538d4e;border:1px solid #538d4e}
+.mp-diff-badge.hard{color:#b59f3b;border:1px solid #b59f3b}
+.mp-diff-badge.superhard{color:#f87171;border:1px solid #f87171}
 /* Waiting-room rows */
 .mp-wrow{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#2a2a2c;border-radius:4px}
 .mp-wrow-name{font-size:0.78rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#fff}
@@ -1353,6 +1357,9 @@ function mpSubscribeRoom(roomId){
   });
   mpRoomChannel.subscribe("game-start",(msg)=>{
     const d=JSON.parse(msg.data);
+    // Store everyone else in this game so any player can initiate a rematch.
+    const me=getUsername().toLowerCase();
+    mpLastRematch={players:(d.players||[]).filter(p=>p!==me)};
     mpStartGame(d.target_word,d.room_id);
   });
   mpRoomChannel.subscribe("player-won",(msg)=>{
@@ -1460,7 +1467,7 @@ async function mpSendHeartbeat(){
     await fetch(MP_HEARTBEAT_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({username:u})
+      body:JSON.stringify({username:u,difficulty:getDifficulty()})
     });
   }catch(_){}
 }
@@ -1483,8 +1490,11 @@ async function mpLoadLobbyPlayers(){
       statusEl.style.display="none";
       secEl.style.display="block";
       const stLabel={available:"Available",playing:"In game",offline:"Offline"};
-      others.forEach(({username:p,status})=>{
+      const diffLabel={normal:"N",hard:"H",superhard:"SH"};
+      others.forEach(({username:p,status,difficulty})=>{
         const avail=status==="available";
+        const diff=difficulty||"normal";
+        const badge=diffLabel[diff]||"N";
         const row=document.createElement("div");
         row.className="mp-prow"+(avail&&mpSelectedPlayers.has(p)?" sel":"")+(avail?"":" unavail");
         row.dataset.player=p;
@@ -1492,6 +1502,7 @@ async function mpLoadLobbyPlayers(){
           <div class="mp-prow-left">
             <span class="mp-dot ${status}"></span>
             <span class="mp-prow-name">${p.toUpperCase()}</span>
+            <span class="mp-diff-badge ${diff}">${badge}</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <span class="mp-prow-st">${stLabel[status]||status}</span>
@@ -1714,16 +1725,15 @@ document.getElementById("mp-invite-btn").addEventListener("click",mpInvitePlayer
 document.getElementById("mp-cancel-btn").addEventListener("click",mpCancelRoom);
 document.getElementById("mp-start-btn").addEventListener("click",mpStartRound);
 document.getElementById("mp-win-rematch").addEventListener("click",async()=>{
-  const wasHost=mpRole==="host";
   const lastPlayers=mpLastRematch?[...mpLastRematch.players]:[];
   mpCloseWinModal();
   await openMpModal();
-  if(wasHost&&lastPlayers.length){
-    // Host auto-re-invites the same players immediately.
+  if(lastPlayers.length){
+    // Whoever taps REMATCH first becomes the new host and invites everyone.
+    // If another player already sent the invite, it will arrive as a banner.
     lastPlayers.forEach(p=>mpSelectedPlayers.add(p));
     await mpInvitePlayers();
   }
-  // Non-host players just open the lobby and wait for the host's auto-invite.
 });
 document.getElementById("mp-win-close").addEventListener("click",()=>{
   mpCloseWinModal();

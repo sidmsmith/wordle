@@ -172,9 +172,14 @@ export default async function handler(req, res) {
           `UPDATE multiplayer_players SET status='playing' WHERE room_id=$1 AND status='accepted'`,
           [room_id]
         );
+        const { rows: playerRows } = await client.query(
+          `SELECT username FROM multiplayer_players WHERE room_id=$1`,
+          [room_id]
+        );
         await ablyPublish(`wordle-room-${room_id}`, "game-start", {
           target_word: target_word.toLowerCase(),
           room_id,
+          players: playerRows.map((r) => r.username),
         });
         return res.status(200).json({ ok: true });
       }
