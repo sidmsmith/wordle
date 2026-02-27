@@ -32,6 +32,14 @@ html = html.replace(
   'fetch("/api/wordle-users")',
   `fetch("${BASE}/api/wordle-users")`
 );
+html = html.replace(
+  `const MP_HEARTBEAT_URL="/api/mp-heartbeat"`,
+  `const MP_HEARTBEAT_URL="${BASE}/api/mp-heartbeat"`
+);
+html = html.replace(
+  `const MP_ROOM_URL="/api/mp-room"`,
+  `const MP_ROOM_URL="${BASE}/api/mp-room"`
+);
 
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");
 

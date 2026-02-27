@@ -39,6 +39,55 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #stats-btn:hover,#stats-btn:active{color:#fff}
 #remaining-btn{position:absolute;left:0;background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;font-size:clamp(0.85rem,2.3vh,1.1rem);font-weight:700;line-height:1;touch-action:manipulation}
 #remaining-btn:hover,#remaining-btn:active{color:#fff}
+/* ── Multiplayer modal ────────────────────────────────────── */
+#mp-modal{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center}
+#mp-modal.open{display:flex}
+#mp-bd{position:absolute;inset:0;background:rgba(0,0,0,0.82)}
+#mp-card{position:relative;background:#1a1a1b;border:1px solid #3a3a3c;border-radius:8px;width:min(92vw,360px);max-height:82vh;display:flex;flex-direction:column;overflow:hidden}
+.mp-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #3a3a3c;flex-shrink:0}
+.mp-title{font-size:0.72rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#9ca3af}
+.mp-x{background:none;border:none;color:#818384;cursor:pointer;font-size:1rem;padding:2px 6px;touch-action:manipulation}
+.mp-x:hover{color:#fff}
+.mp-view{padding:10px 12px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;flex:1}
+.mp-hint{font-size:0.6rem;color:#565758;text-align:center;font-style:italic;padding:2px 0}
+.mp-sec{font-size:0.57rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;margin-top:2px}
+.mp-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#2a2a2c;border:1px solid #3a3a3c;border-radius:4px;cursor:pointer;touch-action:manipulation;user-select:none}
+.mp-row.sel{border-color:#538d4e;background:#1b2b1b}
+.mp-row:hover{background:#333}
+.mp-row-name{font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#fff}
+.mp-row-check{font-size:0.85rem;color:#538d4e;font-weight:700;opacity:0}
+.mp-row.sel .mp-row-check{opacity:1}
+.mp-wait-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#2a2a2c;border-radius:4px}
+.mp-wait-name{font-size:0.78rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#fff}
+.mp-st{font-size:0.6rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+.mp-st.ok{color:#538d4e}.mp-st.wait{color:#b59f3b}.mp-st.no{color:#565758}.mp-st.host{color:#9ca3af}
+.mp-inv-banner{background:#2a2a2c;border:1px solid #b59f3b;border-radius:4px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.mp-inv-text{font-size:0.75rem;color:#fff;font-weight:600;text-align:center}
+.mp-inv-btns{display:flex;gap:6px}
+.mp-inv-btns button{flex:1;border:none;border-radius:4px;padding:7px;font-size:0.7rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.mp-acc{background:#538d4e;color:#fff}.mp-dec{background:#3a3a3c;color:#9ca3af}
+.mp-btn{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:10px;font-size:0.82rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%;flex-shrink:0;margin:0 0 10px}
+.mp-btn:disabled{background:#2a2a2c;color:#565758;cursor:not-allowed}
+.mp-btn:not(:disabled):hover{background:#6aaa64}
+.mp-txt-btn{background:none;border:none;color:#818384;cursor:pointer;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:4px 6px;touch-action:manipulation}
+.mp-txt-btn:hover{color:#fff}
+/* Winner / notification overlay */
+#mp-win-modal{display:none;position:fixed;inset:0;z-index:400;align-items:center;justify-content:center}
+#mp-win-modal.open{display:flex}
+#mp-win-bg{position:absolute;inset:0;background:rgba(0,0,0,0.92)}
+#mp-win-card{position:relative;background:#1a1a1b;border:2px solid #538d4e;border-radius:12px;width:min(88vw,300px);padding:24px 18px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+#mp-win-card.loss{border-color:#565758}
+#mp-win-trophy{font-size:2.4rem;line-height:1}
+#mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
+#mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
+#mp-win-sub{font-size:0.6rem;color:#565758;font-style:italic}
+#mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
+#mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
+/* Header side-groups for balanced centering */
+#hdr-left,#hdr-right{display:flex;align-items:center;gap:2px;width:80px;flex-shrink:0}
+#hdr-right{justify-content:flex-end}
+#mp-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+#mp-btn:hover{color:#fff}
 /* ── Username modal ───────────────────────────────────────── */
 #user-modal{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center}
 #user-modal.open{display:flex}
@@ -121,13 +170,65 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .fwword{text-transform:uppercase;font-weight:700;letter-spacing:0.04em;color:#fff}
 .fwavg{color:#9ca3af;font-size:clamp(0.55rem,1.3vh,0.65rem)}
 .fwno-data{color:#565758;font-size:clamp(0.55rem,1.3vh,0.65rem);text-align:center;padding:5px 2px;font-style:italic}
+/* ── Multiplayer ─────────────────────────────────────────── */
+#hdr-left,#hdr-right{display:flex;align-items:center;gap:2px;width:80px;flex-shrink:0}
+#hdr-right{justify-content:flex-end}
+#mp-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+#mp-btn:hover{color:#fff}
+#mp-modal{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center}
+#mp-modal.open{display:flex}
+#mp-bd{position:absolute;inset:0;background:rgba(0,0,0,0.82)}
+#mp-card{position:relative;background:#1a1a1b;border:1px solid #3a3a3c;border-radius:8px;width:min(92vw,360px);max-height:82vh;display:flex;flex-direction:column;overflow:hidden}
+.mp-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #3a3a3c;flex-shrink:0}
+.mp-title{font-size:0.72rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#9ca3af}
+.mp-x{background:none;border:none;color:#818384;cursor:pointer;font-size:1rem;padding:2px 6px;touch-action:manipulation}.mp-x:hover{color:#fff}
+.mp-view{padding:10px 12px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;flex:1}
+.mp-hint{font-size:0.6rem;color:#565758;text-align:center;font-style:italic;padding:2px 0}
+.mp-sec{font-size:0.57rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;margin-top:2px}
+/* Dynamically-rendered player rows (lobby) */
+.mp-prow{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#2a2a2c;border:1px solid #3a3a3c;border-radius:4px;cursor:pointer;touch-action:manipulation;user-select:none}
+.mp-prow.sel{border-color:#538d4e;background:#1b2b1b}.mp-prow:hover{background:#333}
+.mp-prow-name{font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#fff}
+.mp-prow-chk{font-size:0.85rem;color:#538d4e;font-weight:700;opacity:0}
+.mp-prow.sel .mp-prow-chk{opacity:1}
+/* Waiting-room rows */
+.mp-wrow{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#2a2a2c;border-radius:4px}
+.mp-wrow-name{font-size:0.78rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#fff}
+.mp-wst{font-size:0.6rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+.mp-wst.ok{color:#538d4e}.mp-wst.wait{color:#b59f3b}.mp-wst.no{color:#565758}.mp-wst.hst{color:#9ca3af}
+/* Invitation banner (inside lobby) */
+.mp-inv-banner{background:#2a2a2c;border:1px solid #b59f3b;border-radius:4px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.mp-inv-text{font-size:0.75rem;color:#fff;font-weight:600;text-align:center}
+.mp-inv-row{display:flex;gap:6px}
+.mp-inv-row button{flex:1;border:none;border-radius:4px;padding:7px;font-size:0.7rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.mp-acc-btn{background:#538d4e;color:#fff}.mp-dec-btn{background:#3a3a3c;color:#9ca3af}
+/* Action / ghost buttons (matching HTML class names) */
+.mp-btn{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:10px;font-size:0.82rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%;flex-shrink:0}
+.mp-btn:disabled{background:#2a2a2c;color:#565758;cursor:not-allowed}
+.mp-btn:not(:disabled):hover{background:#6aaa64}
+.mp-txt-btn{background:none;border:none;color:#818384;cursor:pointer;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:4px 6px;touch-action:manipulation}.mp-txt-btn:hover{color:#fff}
+/* Winner overlay */
+#mp-win-modal{display:none;position:fixed;inset:0;z-index:400;align-items:center;justify-content:center}
+#mp-win-modal.open{display:flex}
+#mp-win-bg{position:absolute;inset:0;background:rgba(0,0,0,0.92)}
+#mp-win-card{position:relative;background:#1a1a1b;border:2px solid #538d4e;border-radius:12px;width:min(88vw,300px);padding:24px 18px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+#mp-win-card.loss{border-color:#565758}
+#mp-win-trophy{font-size:2.4rem;line-height:1}
+#mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
+#mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
+#mp-win-sub{font-size:0.6rem;color:#565758;font-style:italic}
+#mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
+#mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
 </style>
 </head>
 <body>
 <div id="game-container">
 <div id="header">
+<div id="hdr-left">
 <button id="remaining-btn" aria-label="Remaining words"></button>
+</div>
 <h1>WORDLE</h1>
+<div id="hdr-right">
 <button id="stats-btn" aria-label="Statistics">
 <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
 <rect x="3" y="12" width="4" height="9" rx="1"/>
@@ -135,6 +236,12 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <rect x="17" y="9" width="4" height="12" rx="1"/>
 </svg>
 </button>
+<button id="mp-btn" aria-label="Multiplayer">
+<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+<path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+</svg>
+</button>
+</div>
 </div>
 <div id="board"></div>
 <div id="message"></div>
@@ -174,6 +281,60 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div class="keyboard-key" data-key="M">M</div>
 <div class="keyboard-key wide" data-key="BACKSPACE">⌫</div>
 </div>
+</div>
+</div>
+
+<!-- ── Multiplayer Modal ────────────────────────────────────────────────── -->
+<div id="mp-modal" role="dialog" aria-modal="true" aria-label="Multiplayer">
+<div id="mp-bd"></div>
+<div id="mp-card">
+  <!-- Lobby view -->
+  <div id="mp-v-lobby">
+    <div class="mp-hdr">
+      <span class="mp-title">MULTIPLAYER</span>
+      <button class="mp-x" id="mp-close-btn">✕</button>
+    </div>
+    <div class="mp-view">
+      <div id="mp-inv-area"></div>
+      <div id="mp-lobby-status" class="mp-hint">Looking for players...</div>
+      <div id="mp-sec-online" class="mp-sec" style="display:none">ONLINE NOW</div>
+      <div id="mp-lobby-list"></div>
+      <button class="mp-btn" id="mp-invite-btn" disabled>INVITE SELECTED</button>
+    </div>
+  </div>
+  <!-- Waiting view (host) -->
+  <div id="mp-v-waiting" style="display:none">
+    <div class="mp-hdr">
+      <span class="mp-title">WAITING FOR PLAYERS</span>
+      <button class="mp-txt-btn" id="mp-cancel-btn">CANCEL</button>
+    </div>
+    <div class="mp-view">
+      <div id="mp-wait-list"></div>
+      <button class="mp-btn" id="mp-start-btn" disabled>START GAME</button>
+    </div>
+  </div>
+  <!-- Accepted view (non-host waiting for start) -->
+  <div id="mp-v-accepted" style="display:none">
+    <div class="mp-hdr">
+      <span class="mp-title">GET READY</span>
+    </div>
+    <div class="mp-view">
+      <div id="mp-accepted-msg" class="mp-hint" style="text-align:center;padding:20px 0"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── Winner Overlay ───────────────────────────────────────────────────── -->
+<div id="mp-win-modal" role="dialog" aria-modal="true">
+<div id="mp-win-bg"></div>
+<div id="mp-win-card">
+  <div id="mp-win-trophy"></div>
+  <div id="mp-win-name"></div>
+  <div id="mp-win-word"></div>
+  <div id="mp-win-sub"></div>
+  <button id="mp-win-rematch">REMATCH</button>
+  <button id="mp-win-close">BACK TO SOLO</button>
 </div>
 </div>
 
@@ -402,8 +563,10 @@ async function trySyncPendingGames(){
   }
 }
 
-function initGame(){
-  targetWord=WORDS[Math.floor(Math.random()*WORDS.length)];
+function initGame(opts){
+  const specificWord=opts&&opts.word;
+  const isMultiplayer=!!(opts&&opts.multiplayer);
+  targetWord=specificWord||WORDS[Math.floor(Math.random()*WORDS.length)];
   currentGuess="";
   currentRow=0;
   gameOver=false;
@@ -425,7 +588,14 @@ function initGame(){
     board.push(row);
   }
   updateKeyboard();
-  createGameSession();
+  if(isMultiplayer){
+    activeGame=null;
+    mpWinReported=false;
+    clearTimeout(mpGameTimer);
+    mpGameTimer=setTimeout(mpTimeout,MP_TIMEOUT_MS);
+  }else{
+    createGameSession();
+  }
   applyDifficultyUI();
 }
 
@@ -520,16 +690,19 @@ function submitGuess(){
   if(currentGuess.toLowerCase()===targetWord){
     gameOver=true;
     finalizeGame("win");
+    if(mpRoomId){
+      mpReportWin(currentRow+1);
+    }
     setTimeout(()=>{
       showMessage("You won!",0);
-      document.getElementById("new-game-btn").style.display="block";
+      if(!mpRoomId) document.getElementById("new-game-btn").style.display="block";
     },600);
   }else if(currentRow===MAX_GUESSES-1){
     gameOver=true;
     finalizeGame("loss");
     setTimeout(()=>{
       showMessage(`You lost! The word was ${targetWord.toUpperCase()}`,0);
-      document.getElementById("new-game-btn").style.display="block";
+      if(!mpRoomId) document.getElementById("new-game-btn").style.display="block";
     },600);
   }else{
     currentRow++;
@@ -539,9 +712,8 @@ function submitGuess(){
 
 function handleKeyInput(key){
   if(gameOver){
-    if(key==="ENTER"){
-      initGame();
-    }
+    // Don't start a solo game while a multiplayer game is active.
+    if(key==="ENTER"&&!mpRoomId) initGame();
     return;
   }
   if(key==="BACKSPACE"){
@@ -998,6 +1170,389 @@ document.getElementById("stats-btn").addEventListener("click",()=>{
 });
 document.getElementById("stats-back").addEventListener("click",()=>{
   document.getElementById("stats-page").classList.remove("visible");
+});
+
+// ── Multiplayer ──────────────────────────────────────────────────────────────
+
+const MP_TIMEOUT_MS=10*60*1000;
+const MP_ABLY_KEY="ojJiew.TwVtNg:Cb6XcfElKgIpu-yNqlWVv3-ayRWw2vjo2JTH2w43mKk";
+const MP_HEARTBEAT_URL="https://wordle-theta-red.vercel.app/api/mp-heartbeat";
+const MP_ROOM_URL="https://wordle-theta-red.vercel.app/api/mp-room";
+
+let mpRoomId=null;
+let mpRole=null;
+let mpWinReported=false;
+let mpGameTimer=null;
+let mpHeartbeatTimer=null;
+let mpSelectedPlayers=new Set();
+let mpPendingInvites=[]; // [{host,room_id}]
+let mpAblyClient=null;
+let mpLobbyChannel=null;
+let mpRoomChannel=null;
+let mpLastRematch=null; // {players:[]} for rematch
+
+// ── Ably ─────────────────────────────────────────────────────────────────────
+function mpGetAbly(){
+  if(!mpAblyClient){
+    mpAblyClient=new Ably.Realtime({key:MP_ABLY_KEY});
+  }
+  return mpAblyClient;
+}
+
+function mpSubscribeLobby(){
+  if(mpLobbyChannel) return;
+  mpLobbyChannel=mpGetAbly().channels.get("wordle-lobby");
+  mpLobbyChannel.subscribe("lobby-update",()=>mpLoadLobbyPlayers());
+  mpLobbyChannel.subscribe("invite",(msg)=>{
+    const d=JSON.parse(msg.data);
+    if(d.invitee===getUsername().toLowerCase()){
+      mpPendingInvites.push({host:d.host,room_id:d.room_id});
+      mpRenderInvitations();
+      // Subscribe to the room channel to receive player-status and game-start events.
+      mpSubscribeRoom(d.room_id);
+    }
+  });
+}
+
+function mpUnsubscribeLobby(){
+  if(mpLobbyChannel){mpLobbyChannel.unsubscribe();mpLobbyChannel=null;}
+}
+
+function mpSubscribeRoom(roomId){
+  if(mpRoomChannel) mpRoomChannel.unsubscribe();
+  mpRoomChannel=mpGetAbly().channels.get("wordle-room-"+roomId);
+  mpRoomChannel.subscribe("player-status",(msg)=>{
+    const d=JSON.parse(msg.data);
+    if(mpRole==="host") mpRenderWaitList(d.players);
+    else mpUpdateStartReady(d.players);
+  });
+  mpRoomChannel.subscribe("game-start",(msg)=>{
+    const d=JSON.parse(msg.data);
+    mpStartGame(d.target_word,d.room_id);
+  });
+  mpRoomChannel.subscribe("player-won",(msg)=>{
+    const d=JSON.parse(msg.data);
+    const iWon=(d.winner===getUsername().toLowerCase());
+    if(!iWon||!mpWinReported){
+      mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count);
+    }
+  });
+  mpRoomChannel.subscribe("room-abandoned",()=>{
+    if(mpRoomId){
+      mpRoomId=null;
+      mpRole=null;
+      clearTimeout(mpGameTimer);
+      showMessage("Host cancelled the game",2500);
+      mpShowView("lobby");
+      document.getElementById("mp-modal").classList.add("open");
+      initGame();
+    }
+  });
+}
+
+function mpUnsubscribeRoom(){
+  if(mpRoomChannel){mpRoomChannel.unsubscribe();mpRoomChannel=null;}
+}
+
+// ── Lobby ─────────────────────────────────────────────────────────────────────
+async function mpLoadAbly(){
+  return new Promise((resolve,reject)=>{
+    if(window.Ably){resolve();return;}
+    const s=document.createElement("script");
+    s.src="https://cdn.ably.com/lib/ably.min-2.js";
+    s.onload=resolve;s.onerror=reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function openMpModal(){
+  await mpLoadAbly();
+  const u=getUsername();
+  if(!u){openUserModal();return;}
+  mpPendingInvites=[];
+  mpSelectedPlayers.clear();
+  mpShowView("lobby");
+  document.getElementById("mp-modal").classList.add("open");
+  mpStartHeartbeat();
+  mpSubscribeLobby();
+  await mpLoadLobbyPlayers();
+}
+
+function closeMpModal(){
+  document.getElementById("mp-modal").classList.remove("open");
+  mpStopHeartbeat();
+  mpUnsubscribeLobby();
+  if(!mpRoomId) mpUnsubscribeRoom();
+}
+
+function mpStartHeartbeat(){
+  mpSendHeartbeat();
+  mpHeartbeatTimer=setInterval(mpSendHeartbeat,5000);
+}
+
+function mpStopHeartbeat(){
+  clearInterval(mpHeartbeatTimer);
+}
+
+async function mpSendHeartbeat(){
+  const u=getUsername();
+  if(!u) return;
+  try{
+    await fetch(MP_HEARTBEAT_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({username:u})
+    });
+  }catch(_){}
+}
+
+async function mpLoadLobbyPlayers(){
+  try{
+    const r=await fetch(MP_HEARTBEAT_URL);
+    const d=await r.json();
+    const me=getUsername().toLowerCase();
+    const others=(d.players||[]).filter(p=>p!==me);
+    const statusEl=document.getElementById("mp-lobby-status");
+    const secEl=document.getElementById("mp-sec-online");
+    const listEl=document.getElementById("mp-lobby-list");
+    listEl.innerHTML="";
+    if(!others.length){
+      statusEl.style.display="block";
+      statusEl.textContent="No other players online right now.";
+      secEl.style.display="none";
+    }else{
+      statusEl.style.display="none";
+      secEl.style.display="block";
+      others.forEach(p=>{
+        const row=document.createElement("div");
+        row.className="mp-prow"+(mpSelectedPlayers.has(p)?" sel":"");
+        row.dataset.player=p;
+        row.innerHTML=`<span class="mp-prow-name">${p.toUpperCase()}</span><span class="mp-prow-chk">✓</span>`;
+        row.addEventListener("click",()=>{
+          if(mpSelectedPlayers.has(p)) mpSelectedPlayers.delete(p);
+          else mpSelectedPlayers.add(p);
+          row.classList.toggle("sel",mpSelectedPlayers.has(p));
+          document.getElementById("mp-invite-btn").disabled=mpSelectedPlayers.size===0;
+        });
+        listEl.appendChild(row);
+      });
+    }
+    document.getElementById("mp-invite-btn").disabled=mpSelectedPlayers.size===0;
+  }catch(_){}
+}
+
+function mpRenderInvitations(){
+  const area=document.getElementById("mp-inv-area");
+  area.innerHTML="";
+  mpPendingInvites.forEach((inv,idx)=>{
+    const banner=document.createElement("div");
+    banner.className="mp-inv-banner";
+    banner.innerHTML=`<div class="mp-inv-text">${inv.host.toUpperCase()} invited you!</div>
+<div class="mp-inv-row">
+  <button class="mp-acc-btn">ACCEPT</button>
+  <button class="mp-dec-btn">DECLINE</button>
+</div>`;
+    banner.querySelector(".mp-acc-btn").addEventListener("click",()=>mpAcceptInvite(inv,idx));
+    banner.querySelector(".mp-dec-btn").addEventListener("click",()=>mpDeclineInvite(inv,idx));
+    area.appendChild(banner);
+  });
+}
+
+async function mpAcceptInvite(inv,idx){
+  mpPendingInvites.splice(idx,1);
+  mpRenderInvitations();
+  mpRoomId=inv.room_id;
+  mpRole="player";
+  document.getElementById("mp-accepted-msg").textContent=`Waiting for ${inv.host.toUpperCase()} to start the game...`;
+  mpShowView("accepted");
+  mpSubscribeRoom(inv.room_id);
+  try{
+    await fetch(MP_ROOM_URL,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"accept",room_id:inv.room_id,username:getUsername()})
+    });
+  }catch(_){}
+}
+
+async function mpDeclineInvite(inv,idx){
+  mpPendingInvites.splice(idx,1);
+  mpRenderInvitations();
+  try{
+    await fetch(MP_ROOM_URL,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"decline",room_id:inv.room_id,username:getUsername()})
+    });
+  }catch(_){}
+}
+
+// ── Waiting room (host) ───────────────────────────────────────────────────────
+async function mpInvitePlayers(){
+  if(!mpSelectedPlayers.size) return;
+  const username=getUsername();
+  const invitees=[...mpSelectedPlayers];
+  mpLastRematch={players:invitees};
+  try{
+    const r=await fetch(MP_ROOM_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({username,invitees})
+    });
+    const d=await r.json();
+    mpRoomId=d.room_id;
+    mpRole="host";
+    mpSubscribeRoom(mpRoomId);
+    mpRenderWaitList([
+      {username:username.toLowerCase(),role:"host",status:"accepted"},
+      ...invitees.map(p=>({username:p,role:"player",status:"invited"}))
+    ]);
+    mpShowView("waiting");
+  }catch(e){
+    showMessage("Could not create game room",2000);
+  }
+}
+
+function mpRenderWaitList(players){
+  const list=document.getElementById("mp-wait-list");
+  list.innerHTML="";
+  let acceptedCount=0;
+  players.forEach(p=>{
+    const row=document.createElement("div");
+    row.className="mp-wrow";
+    const stMap={accepted:"ok",invited:"wait",playing:"ok",won:"ok",declined:"no"};
+    const stLabel={accepted:"✓ Ready",invited:"Waiting...",playing:"Playing",won:"Won",declined:"Declined"};
+    const cls=stMap[p.status]||"wait";
+    const lbl=stLabel[p.status]||p.status;
+    const hostBadge=p.role==="host"?" (HOST)":"";
+    row.innerHTML=`<span class="mp-wrow-name">${p.username.toUpperCase()}${hostBadge}</span><span class="mp-wst ${cls}">${lbl}</span>`;
+    list.appendChild(row);
+    if(p.status==="accepted"&&p.role!=="host") acceptedCount++;
+  });
+  document.getElementById("mp-start-btn").disabled=acceptedCount===0;
+}
+
+function mpUpdateStartReady(players){
+  // For the accepted (non-host) view, just update the accepted-msg text.
+  const allReady=players.every(p=>p.status==="accepted"||p.role==="host");
+  document.getElementById("mp-accepted-msg").textContent=
+    allReady?"All players ready! Waiting for host to start...":"Waiting for all players to accept...";
+}
+
+async function mpCancelRoom(){
+  if(mpRoomId){
+    try{
+      await fetch(MP_ROOM_URL,{
+        method:"PATCH",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({action:"abandon",room_id:mpRoomId,username:getUsername()})
+      });
+    }catch(_){}
+    mpRoomId=null;
+    mpRole=null;
+    mpUnsubscribeRoom();
+  }
+  mpSelectedPlayers.clear();
+  mpShowView("lobby");
+  await mpLoadLobbyPlayers();
+}
+
+async function mpStartRound(){
+  if(!mpRoomId) return;
+  const word=WORDS[Math.floor(Math.random()*WORDS.length)];
+  try{
+    await fetch(MP_ROOM_URL,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"start",room_id:mpRoomId,username:getUsername(),target_word:word})
+    });
+  }catch(e){
+    showMessage("Could not start game",2000);
+  }
+}
+
+// ── Game flow ─────────────────────────────────────────────────────────────────
+function mpStartGame(word,roomId){
+  mpRoomId=roomId;
+  document.getElementById("mp-modal").classList.remove("open");
+  mpStopHeartbeat();
+  mpUnsubscribeLobby();
+  initGame({word,multiplayer:true});
+}
+
+async function mpReportWin(guessesCount){
+  if(mpWinReported) return;
+  mpWinReported=true;
+  clearTimeout(mpGameTimer);
+  try{
+    await fetch(MP_ROOM_URL,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"win",room_id:mpRoomId,username:getUsername(),guesses_count:guessesCount})
+    });
+  }catch(_){}
+  // The server publishes player-won via Ably; our own subscription will show the modal.
+}
+
+function mpTimeout(){
+  if(!mpRoomId) return;
+  fetch(MP_ROOM_URL,{
+    method:"PATCH",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:"abandon",room_id:mpRoomId,username:getUsername()})
+  }).catch(()=>{});
+  mpRoomId=null;mpRole=null;
+  mpUnsubscribeRoom();
+  initGame();
+}
+
+// ── Winner modal ──────────────────────────────────────────────────────────────
+function mpShowWinModal(iWon,winner,word,guessCount){
+  clearTimeout(mpGameTimer);
+  gameOver=true;
+  const card=document.getElementById("mp-win-card");
+  card.className=iWon?"":"loss";
+  document.getElementById("mp-win-trophy").textContent=iWon?"🏆":"";
+  document.getElementById("mp-win-name").textContent=iWon?"YOU WIN!":`${winner.toUpperCase()} WINS!`;
+  document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()}`;
+  document.getElementById("mp-win-sub").textContent=iWon?`Solved in ${guessCount} guess${guessCount!==1?"es":""}!`:"Better luck next time!";
+  document.getElementById("mp-win-modal").classList.add("open");
+}
+
+function mpCloseWinModal(){
+  document.getElementById("mp-win-modal").classList.remove("open");
+  mpRoomId=null;mpRole=null;mpWinReported=false;
+  mpUnsubscribeRoom();
+}
+
+// ── View switcher ─────────────────────────────────────────────────────────────
+function mpShowView(name){
+  ["lobby","waiting","accepted"].forEach(v=>{
+    document.getElementById("mp-v-"+v).style.display=(v===name?"flex":"none");
+  });
+  // Lobby view uses flex column already; force block for containing divs.
+  document.getElementById("mp-v-"+name).style.display="";
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────────
+document.getElementById("mp-btn").addEventListener("click",openMpModal);
+document.getElementById("mp-close-btn").addEventListener("click",closeMpModal);
+document.getElementById("mp-bd").addEventListener("click",closeMpModal);
+document.getElementById("mp-invite-btn").addEventListener("click",mpInvitePlayers);
+document.getElementById("mp-cancel-btn").addEventListener("click",mpCancelRoom);
+document.getElementById("mp-start-btn").addEventListener("click",mpStartRound);
+document.getElementById("mp-win-rematch").addEventListener("click",async()=>{
+  mpCloseWinModal();
+  await openMpModal();
+  if(mpLastRematch&&mpRole==="host"){
+    mpLastRematch.players.forEach(p=>mpSelectedPlayers.add(p));
+    await mpLoadLobbyPlayers();
+    document.getElementById("mp-invite-btn").disabled=mpSelectedPlayers.size===0;
+  }
+});
+document.getElementById("mp-win-close").addEventListener("click",()=>{
+  mpCloseWinModal();
+  initGame();
 });
 
 initGame();
