@@ -58,7 +58,7 @@ export default async function handler(req, res) {
       if (!username) return res.status(400).json({ error: "username required" });
       const { difficulty } = req.body || {};
       const u = username.toLowerCase();
-      const validDiffs = ["normal", "hard", "superhard"];
+      const validDiffs = ["easy", "normal", "hard", "superhard"];
       const diff = validDiffs.includes(difficulty) ? difficulty : "normal";
 
       await client.query(

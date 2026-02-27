@@ -126,9 +126,10 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #diff-btns{display:flex;border:1px solid #3a3a3c;border-radius:4px;overflow:hidden}
 .diff-btn{flex:1;background:#1a1a1b;border:none;border-right:1px solid #3a3a3c;color:#565758;font-size:0.6rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:8px 3px;cursor:pointer;touch-action:manipulation;transition:background 0.15s,color 0.15s}
 .diff-btn:last-child{border-right:none}
+.diff-btn.active[data-value="easy"]{background:#3b82f6;color:#fff}
 .diff-btn.active[data-value="normal"]{background:#538d4e;color:#fff}
-.diff-btn.active[data-value="hard"]{background:#b59f3b;color:#fff}
-.diff-btn.active[data-value="superhard"]{background:#c0392b;color:#fff}
+.diff-btn.active[data-value="hard"]{background:#d97706;color:#fff}
+.diff-btn.active[data-value="superhard"]{background:#ef4444;color:#fff}
 #diff-desc{font-size:0.58rem;color:#565758;text-align:center;margin-top:5px;min-height:1.4em;font-style:italic;line-height:1.4}
 #user-save{width:100%;margin-top:12px;background:#6aaa64;color:#fff;border:none;border-radius:4px;padding:10px;font-size:0.9rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
 #user-save:hover{background:#5a9a54}
@@ -215,9 +216,10 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .mp-dot.offline{background:#565758}
 .mp-prow-st{font-size:0.55rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#565758}
 .mp-diff-badge{font-size:0.55rem;font-weight:700;letter-spacing:0.04em;padding:1px 4px;border-radius:3px;flex-shrink:0}
+.mp-diff-badge.easy{color:#3b82f6;border:1px solid #3b82f6}
 .mp-diff-badge.normal{color:#538d4e;border:1px solid #538d4e}
-.mp-diff-badge.hard{color:#b59f3b;border:1px solid #b59f3b}
-.mp-diff-badge.superhard{color:#f87171;border:1px solid #f87171}
+.mp-diff-badge.hard{color:#d97706;border:1px solid #d97706}
+.mp-diff-badge.superhard{color:#ef4444;border:1px solid #ef4444}
 /* Waiting-room rows */
 .mp-wrow{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#2a2a2c;border-radius:4px}
 .mp-wrow-name{font-size:0.78rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#fff}
@@ -373,6 +375,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
   <div id="diff-section">
     <div id="diff-label">DIFFICULTY</div>
     <div id="diff-btns">
+      <button class="diff-btn" data-value="easy">EASY</button>
       <button class="diff-btn" data-value="normal">NORMAL</button>
       <button class="diff-btn" data-value="hard">HARD</button>
       <button class="diff-btn" data-value="superhard">SUPER HARD</button>
@@ -859,7 +862,7 @@ function ordinal(n){
 
 function checkHardModeConstraints(guess){
   const difficulty=getDifficulty();
-  if(difficulty==="normal"||!guessHistory.length) return null;
+  if(difficulty==="easy"||difficulty==="normal"||!guessHistory.length) return null;
   const g=guess.toLowerCase();
 
   // Collect green (required position) and yellow (required letter + forbidden positions) constraints.
@@ -919,6 +922,9 @@ function applyDifficultyUI(){
     btn.style.visibility="";
     updateRemainingCount();
   }
+  // Tapping the count only opens the modal in Easy mode; update button style
+  // to signal interactivity (cursor pointer vs default).
+  btn.style.cursor=(d==="easy")?"pointer":"default";
 }
 
 function updateRemainingCount(){
@@ -965,8 +971,8 @@ function closeWordsModal(){
 
 document.getElementById("remaining-btn").addEventListener("click",()=>{
   const d=getDifficulty();
-  if(d==="hard"){
-    showMessage("Word list disabled in Hard Mode");
+  if(d!=="easy"){
+    showMessage("Word list only available in Easy mode",2000);
     return;
   }
   openWordsModal();
@@ -1101,7 +1107,8 @@ async function loadStats(){
 
 /* ── Difficulty control ───────────────────────────────────── */
 const DIFF_DESCS={
-  normal:"No restrictions on guesses",
+  easy:"No restrictions — word list & count always available",
+  normal:"No restrictions — word list hidden, count shown",
   hard:"Must use revealed green & yellow letters",
   superhard:"Hard Mode + avoid gray letters & fix yellow positions"
 };
@@ -1117,6 +1124,11 @@ function updateDifficultyButtons(){
 document.getElementById("diff-btns").addEventListener("click",e=>{
   const btn=e.target.closest(".diff-btn");
   if(!btn) return;
+  // Block changes mid-multiplayer to prevent difficulty cheating.
+  if(mpRoomId){
+    showMessage("Cannot change difficulty during a multiplayer game",2200);
+    return;
+  }
   const value=btn.dataset.value;
   localStorage.setItem("wordle_difficulty",value);
   updateDifficultyButtons();
@@ -1490,7 +1502,7 @@ async function mpLoadLobbyPlayers(){
       statusEl.style.display="none";
       secEl.style.display="block";
       const stLabel={available:"Available",playing:"In game",offline:"Offline"};
-      const diffLabel={normal:"N",hard:"H",superhard:"SH"};
+      const diffLabel={easy:"E",normal:"N",hard:"H",superhard:"SH"};
       others.forEach(({username:p,status,difficulty})=>{
         const avail=status==="available";
         const diff=difficulty||"normal";

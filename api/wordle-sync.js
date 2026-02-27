@@ -66,7 +66,7 @@ function normalizeGame(rawGame) {
     : null;
 
   // Optional: difficulty level (normal / hard / superhard).
-  const VALID_DIFFICULTIES = ["normal", "hard", "superhard"];
+  const VALID_DIFFICULTIES = ["easy", "normal", "hard", "superhard"];
   const rawDiff = rawGame.difficulty ? String(rawGame.difficulty).trim().toLowerCase() : null;
   const difficulty = VALID_DIFFICULTIES.includes(rawDiff) ? rawDiff : "normal";
 
