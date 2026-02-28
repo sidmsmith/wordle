@@ -1075,8 +1075,11 @@ function renderExtraStats(me, overall){
     const ovVal=ovPpgMap[g];
     let meClass="ppg-me";
     if(meVal!==undefined&&ovVal!==undefined){
-      if(meVal<ovVal) meClass="ppg-better";
-      else if(meVal>ovVal) meClass="ppg-worse";
+      const meRounded=Math.round(meVal);
+      const ovRounded=Math.round(ovVal);
+      if(meRounded<ovRounded) meClass="ppg-better";
+      else if(meRounded>ovRounded) meClass="ppg-worse";
+      // equal rounded values stay white ("even")
     }
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${g}</td><td class="${meClass}">${meVal!==undefined?Math.round(meVal):"—"}</td><td>${ovVal!==undefined?Math.round(ovVal):"—"}</td>`;
