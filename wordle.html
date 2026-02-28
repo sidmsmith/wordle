@@ -101,7 +101,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
 #mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
 #mp-win-sub{font-size:0.62rem;color:#9ca3af;font-style:normal}
-#mp-win-first{font-size:0.62rem;color:#6aaa64;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px}
+#mp-win-first{font-size:0.6rem;color:#6aaa64;letter-spacing:0.04em;text-transform:uppercase;margin-top:2px;text-align:center;line-height:1.5;word-break:break-word}
 #mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
 #mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
 /* Header side-groups for balanced centering */
@@ -268,7 +268,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
 #mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
 #mp-win-sub{font-size:0.62rem;color:#9ca3af;font-style:normal}
-#mp-win-first{font-size:0.62rem;color:#6aaa64;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px}
+#mp-win-first{font-size:0.6rem;color:#6aaa64;letter-spacing:0.04em;text-transform:uppercase;margin-top:2px;text-align:center;line-height:1.5;word-break:break-word}
 #mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
 #mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
 </style>
@@ -798,18 +798,18 @@ function submitGuess(){
   }
   if(currentGuess.toLowerCase()===targetWord){
     gameOver=true;
-    // Capture first-word and last-remaining stats before finalizeGame clears activeGame.
+    // Capture all guesses/remaining before finalizeGame clears activeGame.
     // Use mpGameTracker for MP games (activeGame is null during multiplayer).
     const _tracker=mpRoomId?mpGameTracker:activeGame;
-    const mpFirstWord=_tracker&&_tracker.guesses.length>0?_tracker.guesses[0]:null;
-    const mpFirstRemaining=_tracker&&_tracker.remaining_counts.length>0?_tracker.remaining_counts[0]:null;
+    const mpAllGuesses=_tracker?[..._tracker.guesses]:[];
+    const mpAllRemaining=_tracker?[..._tracker.remaining_counts]:[];
     // Remaining words BEFORE the winning guess (how "lucky" the win was).
     const mpLastRemaining=currentRow>0&&_tracker&&_tracker.remaining_counts.length>=currentRow
       ?_tracker.remaining_counts[currentRow-1]
       :WORDS.length;
     finalizeGame("win");
     if(mpRoomId){
-      mpReportWin(currentRow+1,mpFirstWord,mpFirstRemaining,mpLastRemaining);
+      mpReportWin(currentRow+1,mpAllGuesses,mpAllRemaining,mpLastRemaining);
     }
     setTimeout(()=>{
       showMessage("You won!",0);
@@ -1560,7 +1560,7 @@ function mpSubscribeRoom(roomId){
   mpRoomChannel.subscribe("player-won",(msg)=>{
     const d=JSON.parse(msg.data);
     const iWon=(d.winner===getUsername().toLowerCase());
-    mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count,d.first_word,d.first_remaining,d.last_remaining);
+    mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count,d.all_guesses,d.all_remaining,d.last_remaining);
   });
   mpRoomChannel.subscribe("room-abandoned",(msg)=>{
     const d=JSON.parse(msg.data||"{}");
@@ -1878,7 +1878,7 @@ function mpStartGame(word,roomId){
   initGame({word,multiplayer:true});
 }
 
-async function mpReportWin(guessesCount,firstWord,firstRemaining,lastRemaining){
+async function mpReportWin(guessesCount,allGuesses,allRemaining,lastRemaining){
   if(mpWinReported) return;
   mpWinReported=true;
   clearTimeout(mpGameTimer);
@@ -1891,8 +1891,8 @@ async function mpReportWin(guessesCount,firstWord,firstRemaining,lastRemaining){
         room_id:mpRoomId,
         username:getUsername(),
         guesses_count:guessesCount,
-        first_word:firstWord||null,
-        first_remaining:firstRemaining!=null?firstRemaining:null,
+        all_guesses:allGuesses||[],
+        all_remaining:allRemaining||[],
         last_remaining:lastRemaining!=null?lastRemaining:null
       })
     });
@@ -1926,7 +1926,7 @@ function mpTimeout(){
 }
 
 // ── Winner modal ──────────────────────────────────────────────────────────────
-function mpShowWinModal(iWon,winner,word,guessCount,firstWord,firstRemaining,lastRemaining){
+function mpShowWinModal(iWon,winner,word,guessCount,allGuesses,allRemaining,lastRemaining){
   clearTimeout(mpGameTimer);
   gameOver=true;
   const card=document.getElementById("mp-win-card");
@@ -1950,9 +1950,12 @@ function mpShowWinModal(iWon,winner,word,guessCount,firstWord,firstRemaining,las
     const remLabel=lastRemaining!=null?`, ${lastRemaining} Remaining`:"";
     document.getElementById("mp-win-sub").textContent=guessLabel+remLabel;
     const firstEl=document.getElementById("mp-win-first");
-    if(firstWord){
-      const rem=firstRemaining!=null?` (${firstRemaining})`:"";
-      firstEl.textContent=`First word: ${firstWord.toUpperCase()}${rem}`;
+    if(allGuesses&&allGuesses.length>0){
+      const parts=allGuesses.map((g,i)=>{
+        const rem=allRemaining&&allRemaining[i]!=null?` (${allRemaining[i]})`:"";
+        return g.toUpperCase()+rem;
+      });
+      firstEl.textContent="Words: "+parts.join(", ");
     }else{
       firstEl.textContent="";
     }
