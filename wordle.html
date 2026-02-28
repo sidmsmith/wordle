@@ -612,8 +612,8 @@ function createGameSession(){
 }
 
 function recordGuess(guess){
-  if(!activeGame)return;
-  activeGame.guesses.push(guess.toLowerCase());
+  if(activeGame) activeGame.guesses.push(guess.toLowerCase());
+  if(mpGameTracker) mpGameTracker.guesses.push(guess.toLowerCase());
 }
 
 function finalizeGame(outcome){
@@ -692,10 +692,12 @@ function initGame(opts){
   updateKeyboard();
   if(isMultiplayer){
     activeGame=null;
+    mpGameTracker={guesses:[],remaining_counts:[]};
     mpWinReported=false;
     clearTimeout(mpGameTimer);
     mpGameTimer=setTimeout(mpTimeout,MP_TIMEOUT_MS);
   }else{
+    mpGameTracker=null;
     createGameSession();
   }
   applyDifficultyUI();
@@ -780,7 +782,9 @@ function submitGuess(){
   updateLetterStates(currentGuess,states);
   guessHistory.push({guess:currentGuess.toLowerCase(),states});
   updateRemainingCount();
-  if(activeGame) activeGame.remaining_counts.push(getRemainingWords().length);
+  const _rem=getRemainingWords().length;
+  if(activeGame) activeGame.remaining_counts.push(_rem);
+  if(mpGameTracker) mpGameTracker.remaining_counts.push(_rem);
   for(let i=0;i<WORD_LENGTH;i++){
     setTimeout(()=>{
       row[i].classList.add("flip");
@@ -792,8 +796,10 @@ function submitGuess(){
   if(currentGuess.toLowerCase()===targetWord){
     gameOver=true;
     // Capture first-word stats before finalizeGame clears activeGame.
-    const mpFirstWord=activeGame&&activeGame.guesses.length>0?activeGame.guesses[0]:null;
-    const mpFirstRemaining=activeGame&&activeGame.remaining_counts.length>0?activeGame.remaining_counts[0]:null;
+    // Use mpGameTracker for MP games (activeGame is null during multiplayer).
+    const _tracker=mpRoomId?mpGameTracker:activeGame;
+    const mpFirstWord=_tracker&&_tracker.guesses.length>0?_tracker.guesses[0]:null;
+    const mpFirstRemaining=_tracker&&_tracker.remaining_counts.length>0?_tracker.remaining_counts[0]:null;
     finalizeGame("win");
     if(mpRoomId){
       mpReportWin(currentRow+1,mpFirstWord,mpFirstRemaining);
@@ -1437,6 +1443,7 @@ const MP_HEARTBEAT_URL="/api/mp-heartbeat";
 const MP_ROOM_URL="/api/mp-room";
 
 let mpRoomId=null;
+let mpGameTracker=null; // tracks guesses+remaining_counts for MP (activeGame is null during MP)
 let mpRole=null;
 let mpWinReported=false;
 let mpGameTimer=null;
