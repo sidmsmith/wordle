@@ -279,15 +279,19 @@ export default async function handler(req, res) {
     const mpWinPct  = mpMatches > 0 ? Math.round((mpWins / mpMatches) * 100) : 0;
 
     // Overall MP streaks.
-    let mpBestRun = 0, mpRun = 0;
+    let mpBestRun = 0, mpWorstRun = 0, mpRun = 0, mpLossRun = 0;
     for (const r of mpRows) {
-      if (r.i_won) { mpRun++; if (mpRun > mpBestRun) mpBestRun = mpRun; }
-      else mpRun = 0;
+      if (r.i_won) { mpRun++; if (mpRun > mpBestRun) mpBestRun = mpRun; mpLossRun = 0; }
+      else { mpLossRun++; if (mpLossRun > mpWorstRun) mpWorstRun = mpLossRun; mpRun = 0; }
     }
-    let mpCurrentRun = 0;
-    for (let i = mpRows.length - 1; i >= 0; i--) {
-      if (mpRows[i].i_won) mpCurrentRun++;
-      else break;
+    // Current run: length + direction (win or loss)
+    let mpCurrentRun = 0, mpCurrentIsWin = false;
+    if (mpRows.length > 0) {
+      mpCurrentIsWin = mpRows[mpRows.length - 1].i_won;
+      for (let i = mpRows.length - 1; i >= 0; i--) {
+        if (mpRows[i].i_won === mpCurrentIsWin) mpCurrentRun++;
+        else break;
+      }
     }
 
     // Head-to-head: group by sorted opponents key.
@@ -306,17 +310,22 @@ export default async function handler(req, res) {
         const wins    = h.games.filter(Boolean).length;
         const losses  = h.games.length - wins;
         const winPct  = Math.round((wins / h.games.length) * 100);
-        let hBest = 0, hRun = 0;
+        let hBest = 0, hWorst = 0, hRun = 0, hLossRun = 0;
         for (const won of h.games) {
-          if (won) { hRun++; if (hRun > hBest) hBest = hRun; }
-          else hRun = 0;
+          if (won) { hRun++; if (hRun > hBest) hBest = hRun; hLossRun = 0; }
+          else { hLossRun++; if (hLossRun > hWorst) hWorst = hLossRun; hRun = 0; }
         }
-        let hCurrent = 0;
-        for (let i = h.games.length - 1; i >= 0; i--) {
-          if (h.games[i]) hCurrent++;
-          else break;
+        let hCurrent = 0, hCurrentIsWin = false;
+        if (h.games.length > 0) {
+          hCurrentIsWin = h.games[h.games.length - 1];
+          for (let i = h.games.length - 1; i >= 0; i--) {
+            if (h.games[i] === hCurrentIsWin) hCurrent++;
+            else break;
+          }
         }
-        return { opponents: h.opponents, wins, losses, winPct, currentStreak: hCurrent, bestStreak: hBest };
+        return { opponents: h.opponents, wins, losses, winPct,
+          currentStreak: hCurrent, currentIsWin: hCurrentIsWin,
+          bestStreak: hBest, worstStreak: hWorst };
       })
       // Sort: 1v1 first, then groups; within each, most games played first.
       .sort((a, b) => {
@@ -356,7 +365,9 @@ export default async function handler(req, res) {
         losses: mpLosses,
         winPct: mpWinPct,
         currentStreak: mpCurrentRun,
+        currentIsWin: mpCurrentIsWin,
         bestStreak: mpBestRun,
+        worstStreak: mpWorstRun,
         headToHead: h2hRows,
       },
     });
