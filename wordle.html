@@ -117,7 +117,6 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #user-card-title{text-align:center;font-size:0.8rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#9ca3af;margin-bottom:12px}
 #user-input{width:100%;background:#121213;border:2px solid #3a3a3c;border-radius:4px;color:#fff;font-size:1rem;font-weight:700;letter-spacing:0.08em;padding:8px 10px;text-transform:uppercase;outline:none}
 #user-input:focus{border-color:#818384}
-#user-warning{font-size:0.65rem;color:#f87171;margin-top:4px;min-height:1em;text-align:center}
 #user-chips-label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;margin:10px 0 5px}
 #user-chips{display:flex;flex-wrap:wrap;gap:6px}
 .uchip{background:#2a2a2c;border:1px solid #3a3a3c;border-radius:4px;color:#9ca3af;font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:5px 10px;cursor:pointer;touch-action:manipulation}
@@ -393,7 +392,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div id="user-card">
   <div id="user-card-title">WHO ARE YOU?</div>
   <input id="user-input" type="text" maxlength="32" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="ENTER NAME">
-  <div id="user-warning"></div>
+
   <div id="user-chips-label">SELECT EXISTING</div>
   <div id="user-chips"></div>
   <div id="diff-section">
@@ -1293,7 +1292,6 @@ async function openUserModal(){
   // Silently block settings during an active multiplayer game.
   if(mpRoomId) return;
   const input=document.getElementById("user-input");
-  const warning=document.getElementById("user-warning");
   const chips=document.getElementById("user-chips");
   const current=getUsername();
   input.value=current.toUpperCase();
@@ -1322,7 +1320,6 @@ async function openUserModal(){
       btn.textContent=u.toUpperCase();
       btn.addEventListener("click",()=>{
         input.value=u.toUpperCase();
-        showUserWarning(current,u.toLowerCase());
       });
       frag.appendChild(btn);
     });
@@ -1337,7 +1334,6 @@ async function openUserModal(){
     guestBtn.textContent="GUEST";
     guestBtn.addEventListener("click",()=>{
       input.value="GUEST";
-      showUserWarning(current,"guest");
     });
     frag.appendChild(guestBtn);
     chips.appendChild(frag);
@@ -1346,14 +1342,6 @@ async function openUserModal(){
   }
 }
 
-function showUserWarning(oldName,newName){
-  const w=document.getElementById("user-warning");
-  if(oldName && oldName.toLowerCase()!==newName.toLowerCase()){
-    w.textContent="Existing games saved under "+oldName.toUpperCase()+" won't be moved.";
-  } else {
-    w.textContent="";
-  }
-}
 
 function closeUserModal(){
   document.getElementById("user-modal").classList.remove("open");
@@ -1418,7 +1406,7 @@ updateMpBtnOffline();
 function saveUsername(){
   const raw=document.getElementById("user-input").value.trim().toLowerCase();
   if(!raw){
-    document.getElementById("user-warning").textContent="Please enter a name.";
+    showMessage("Please enter a name.",2000);
     return;
   }
   localStorage.setItem("wordle_username",raw);
@@ -1436,10 +1424,6 @@ function saveUsername(){
   }
 }
 
-document.getElementById("user-input").addEventListener("input",function(){
-  const current=getUsername();
-  showUserWarning(current,this.value.trim().toLowerCase());
-});
 document.getElementById("user-input").addEventListener("keydown",function(e){
   if(e.key==="Enter") saveUsername();
 });
