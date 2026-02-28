@@ -24,7 +24,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #message{min-height:clamp(30px,4vh,40px);text-align:center;font-size:clamp(0.875rem,2.5vh,1.2rem);margin:0;font-weight:600;flex-shrink:0}
 #new-game-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,12px) clamp(24px,6vw,36px);font-size:clamp(0.9rem,2.5vh,1.1rem);font-weight:600;border-radius:6px;cursor:pointer;display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;box-shadow:0 2px 12px rgba(0,0,0,0.5)}
 #new-game-btn:hover{background:#5a9a54}
-#new-game-btn:active{transform:scale(0.98)}
+#new-game-btn:active{transform:translate(-50%,-50%) scale(0.97)}
 #keyboard{display:flex;flex-direction:column;gap:clamp(4px,1vh,8px);width:100%;max-width:500px;padding:0 clamp(5px,2vw,10px);flex-shrink:0;position:relative}
 .keyboard-row{display:flex;justify-content:center;gap:clamp(4px,1vw,6px);width:100%}
 .keyboard-key{flex:1;max-width:43px;height:clamp(36px,7vh,58px);display:flex;align-items:center;justify-content:center;background:#818384;color:#fff;border:none;border-radius:4px;font-size:clamp(0.7rem,2vh,0.875rem);font-weight:700;text-transform:uppercase;cursor:pointer;user-select:none;touch-action:manipulation;transition:all 0.1s}
@@ -884,7 +884,7 @@ document.querySelectorAll(".keyboard-key").forEach(key=>{
   });
 });
 
-document.getElementById("new-game-btn").addEventListener("click",initGame);
+document.getElementById("new-game-btn").addEventListener("click",()=>initGame());
 window.addEventListener("online",()=>{
   syncRetryMs=2000;
   trySyncPendingGames();
