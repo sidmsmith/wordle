@@ -187,6 +187,24 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .ppg-worse{color:#f87171!important;font-weight:700!important}
 .fw-cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#3a3a3c;margin-top:4px}
 .fwcol{background:#121213;padding:clamp(4px,1.5vw,7px)}
+/* ── Multiplayer stats section ──────────────────────────────────────── */
+#mp-stats-section{width:100%;max-width:500px}
+.mps-overall{display:flex;justify-content:space-around;width:100%;padding:4px 0 8px}
+.mps-box{display:flex;flex-direction:column;align-items:center;gap:1px}
+.mps-val{font-size:clamp(1.1rem,3vw,1.4rem);font-weight:700;color:#fff}
+.mps-lbl{font-size:clamp(0.48rem,1.2vw,0.58rem);color:#565758;letter-spacing:0.09em;text-transform:uppercase}
+.mps-val.win-good{color:#6aaa64}
+.mps-val.win-bad{color:#f87171}
+.mps-val.streak-hot{color:#6aaa64}
+.mps-table{width:100%;border-collapse:collapse}
+.mps-table th{color:#565758;font-size:clamp(0.48rem,1.2vh,0.58rem);font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 4px;text-align:center}
+.mps-table th:first-child{text-align:left}
+.mps-table td{padding:3px 4px;text-align:center;font-size:clamp(0.58rem,1.4vh,0.68rem);color:#9ca3af}
+.mps-table td:first-child{text-align:left;color:#fff;font-weight:600}
+.mps-table tr.mps-divider td{padding:0;border-top:1px solid #3a3a3c}
+.mps-td-win{color:#6aaa64!important;font-weight:700!important}
+.mps-td-loss{color:#f87171!important;font-weight:700!important}
+.mps-td-streak{color:#6aaa64!important;font-weight:700!important}
 .fwcol-hdr{text-align:center;font-size:clamp(0.53rem,1.3vh,0.63rem);font-weight:700;letter-spacing:0.1em;color:#565758;text-transform:uppercase;padding-bottom:3px;border-bottom:1px solid #3a3a3c;margin-bottom:3px}
 .fwrow{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:clamp(0.58rem,1.5vh,0.7rem)}
 .fwword{text-transform:uppercase;font-weight:700;letter-spacing:0.04em;color:#fff}
@@ -461,6 +479,34 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div class="fwcol"><div class="fwcol-hdr">Me</div><div id="fw-worst-me"></div></div>
 <div class="fwcol"><div class="fwcol-hdr">Overall</div><div id="fw-worst-overall"></div></div>
 </div>
+</div>
+</div>
+
+<!-- ── Multiplayer Stats ─────────────────────────────────────────────── -->
+<div id="mp-stats-section" style="display:none">
+<div class="xsec">
+<div class="xsec-title">Multiplayer</div>
+<div class="mps-overall">
+  <div class="mps-box"><div class="mps-val" id="mps-matches">0</div><div class="mps-lbl">Matches</div></div>
+  <div class="mps-box"><div class="mps-val" id="mps-wins">0</div><div class="mps-lbl">Wins</div></div>
+  <div class="mps-box"><div class="mps-val" id="mps-losses">0</div><div class="mps-lbl">Losses</div></div>
+  <div class="mps-box"><div class="mps-val" id="mps-win-pct">0%</div><div class="mps-lbl">Win %</div></div>
+  <div class="mps-box"><div class="mps-val" id="mps-streak">0</div><div class="mps-lbl">Streak</div></div>
+  <div class="mps-box"><div class="mps-val" id="mps-best">0</div><div class="mps-lbl">Best</div></div>
+</div>
+</div>
+<div class="xsec" id="mps-h2h-section" style="display:none">
+<div class="xsec-title">Head-to-Head</div>
+<table class="mps-table">
+<thead><tr>
+  <th>Opponent(s)</th>
+  <th>W</th><th>L</th>
+  <th>Win%</th>
+  <th>Streak</th>
+  <th>Best</th>
+</tr></thead>
+<tbody id="mps-h2h-body"></tbody>
+</table>
 </div>
 </div>
 </div>
@@ -1095,15 +1141,71 @@ function renderExtraStats(me, overall){
   document.getElementById("stats-extra").style.display="";
 }
 
+function renderMpStats(mp){
+  const sec=document.getElementById("mp-stats-section");
+  if(!mp||mp.matches===0){sec.style.display="none";return;}
+  sec.style.display="";
+
+  document.getElementById("mps-matches").textContent=mp.matches;
+  document.getElementById("mps-wins").textContent=mp.wins;
+  document.getElementById("mps-losses").textContent=mp.losses;
+
+  const pctEl=document.getElementById("mps-win-pct");
+  pctEl.textContent=mp.winPct+"%";
+  pctEl.className="mps-val"+(mp.winPct>50?" win-good":mp.winPct<50?" win-bad":"");
+
+  const strkEl=document.getElementById("mps-streak");
+  strkEl.textContent=mp.currentStreak;
+  strkEl.className="mps-val"+(mp.currentStreak>0?" streak-hot":"");
+
+  document.getElementById("mps-best").textContent=mp.bestStreak;
+
+  // Head-to-head table
+  const h2hSec=document.getElementById("mps-h2h-section");
+  const tbody=document.getElementById("mps-h2h-body");
+  tbody.innerHTML="";
+  if(!mp.headToHead||!mp.headToHead.length){
+    h2hSec.style.display="none";
+    return;
+  }
+  h2hSec.style.display="";
+
+  let lastOppLen=-1;
+  mp.headToHead.forEach(r=>{
+    // Divider row between 1v1 and group matchups
+    if(lastOppLen===1&&r.opponents.length>1){
+      const div=document.createElement("tr");
+      div.className="mps-divider";
+      div.innerHTML=`<td colspan="6"></td>`;
+      tbody.appendChild(div);
+    }
+    lastOppLen=r.opponents.length;
+
+    const oppLabel=r.opponents.map(o=>o.toUpperCase()).join(" + ");
+    const pctClass=r.winPct>50?"mps-td-win":r.winPct<50?"mps-td-loss":"";
+    const stClass=r.currentStreak>0?"mps-td-streak":"";
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${oppLabel}</td>`+
+      `<td>${r.wins}</td>`+
+      `<td>${r.losses}</td>`+
+      `<td class="${pctClass}">${r.winPct}%</td>`+
+      `<td class="${stClass}">${r.currentStreak}</td>`+
+      `<td>${r.bestStreak}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
 async function loadStats(){
   const msg=document.getElementById("stats-msg");
   const cols=document.getElementById("stats-cols");
   const extra=document.getElementById("stats-extra");
+  const mpSec=document.getElementById("mp-stats-section");
   msg.textContent="Loading...";
   msg.style.color="#9ca3af";
   msg.style.display="block";
   cols.style.display="none";
   extra.style.display="none";
+  mpSec.style.display="none";
   try{
     const username=getUsername();
     const r=await fetch(`/api/wordle-stats?username=${encodeURIComponent(username)}`);
@@ -1113,6 +1215,7 @@ async function loadStats(){
     renderStatsCol("col-me",d.me,meLabel);
     renderStatsCol("col-overall",d.overall,"OVERALL");
     renderExtraStats(d.me,d.overall);
+    renderMpStats(d.mpStats);
     msg.style.display="none";
     cols.style.display="";
   }catch(e){

@@ -7,6 +7,10 @@ let pool = null;
 // for Best / Worst First Word lists. Increase this as the game log grows.
 const MIN_FIRST_WORD_GAMES = 3;
 
+// Minimum multiplayer games against a specific opponent group before that
+// matchup appears in the Head-to-Head table.
+const MIN_MP_H2H_GAMES = 3;
+
 function getPool() {
   if (!pool) {
     const connectionString = process.env.NEON_DATABASE_URL;
@@ -76,6 +80,7 @@ export default async function handler(req, res) {
       overallBestRes,
       overallWorstRes,
       overallPpgRes,
+      mpGamesRes,
     ] = await Promise.all([
 
       // 1. All games for this user (streak + distribution + top starters).
@@ -186,6 +191,29 @@ export default async function handler(req, res) {
          GROUP BY t.idx
          ORDER BY t.idx`
       ),
+
+      // 11. Multiplayer game history for this user (ordered oldest→newest for streak calc).
+      client.query(
+        `SELECT
+           mr.ended_at,
+           CASE WHEN LOWER(winner_mp.username) = LOWER($1) THEN true ELSE false END AS i_won,
+           ARRAY_AGG(LOWER(other_mp.username) ORDER BY LOWER(other_mp.username)) AS opponents
+         FROM multiplayer_rooms mr
+         JOIN multiplayer_players my_mp
+           ON my_mp.room_id = mr.id
+           AND LOWER(my_mp.username) = LOWER($1)
+           AND my_mp.status IN ('playing','won','lost')
+         JOIN multiplayer_players other_mp
+           ON other_mp.room_id = mr.id
+           AND LOWER(other_mp.username) != LOWER($1)
+           AND other_mp.status IN ('playing','won','lost')
+         LEFT JOIN multiplayer_players winner_mp
+           ON winner_mp.room_id = mr.id AND winner_mp.status = 'won'
+         WHERE mr.status = 'complete'
+         GROUP BY mr.id, mr.ended_at, winner_mp.username
+         ORDER BY mr.ended_at ASC`,
+        [username]
+      ),
     ]);
 
     // ── "Me" stats ──────────────────────────────────────────────────────────
@@ -242,6 +270,61 @@ export default async function handler(req, res) {
       bestStreak: overallBestStreak,
     } = computeStreaks(overallStreakRes.rows.map(r => r.outcome));
 
+    // ── Multiplayer stats ────────────────────────────────────────────────────
+    const mpRows = mpGamesRes.rows; // [{i_won, opponents[], ended_at}]
+
+    const mpMatches = mpRows.length;
+    const mpWins    = mpRows.filter(r => r.i_won).length;
+    const mpLosses  = mpMatches - mpWins;
+    const mpWinPct  = mpMatches > 0 ? Math.round((mpWins / mpMatches) * 100) : 0;
+
+    // Overall MP streaks.
+    let mpBestRun = 0, mpRun = 0;
+    for (const r of mpRows) {
+      if (r.i_won) { mpRun++; if (mpRun > mpBestRun) mpBestRun = mpRun; }
+      else mpRun = 0;
+    }
+    let mpCurrentRun = 0;
+    for (let i = mpRows.length - 1; i >= 0; i--) {
+      if (mpRows[i].i_won) mpCurrentRun++;
+      else break;
+    }
+
+    // Head-to-head: group by sorted opponents key.
+    const h2hMap = {};
+    for (const r of mpRows) {
+      const opp = (r.opponents || []).map(o => o.toLowerCase()).sort();
+      if (!opp.length) continue;
+      const key = opp.join(",");
+      if (!h2hMap[key]) h2hMap[key] = { opponents: opp, games: [] };
+      h2hMap[key].games.push(r.i_won);
+    }
+
+    const h2hRows = Object.values(h2hMap)
+      .filter(h => h.games.length >= MIN_MP_H2H_GAMES)
+      .map(h => {
+        const wins    = h.games.filter(Boolean).length;
+        const losses  = h.games.length - wins;
+        const winPct  = Math.round((wins / h.games.length) * 100);
+        let hBest = 0, hRun = 0;
+        for (const won of h.games) {
+          if (won) { hRun++; if (hRun > hBest) hBest = hRun; }
+          else hRun = 0;
+        }
+        let hCurrent = 0;
+        for (let i = h.games.length - 1; i >= 0; i--) {
+          if (h.games[i]) hCurrent++;
+          else break;
+        }
+        return { opponents: h.opponents, wins, losses, winPct, currentStreak: hCurrent, bestStreak: hBest };
+      })
+      // Sort: 1v1 first, then groups; within each, most games played first.
+      .sort((a, b) => {
+        if (a.opponents.length !== b.opponents.length)
+          return a.opponents.length - b.opponents.length;
+        return (b.wins + b.losses) - (a.wins + a.losses);
+      });
+
     return res.status(200).json({
       me: {
         totalGames: meTotal,
@@ -266,6 +349,15 @@ export default async function handler(req, res) {
         bestFirstWords: processFirstWords(overallBestRes.rows),
         worstFirstWords: processFirstWords(overallWorstRes.rows),
         possibilitiesPerGuess: processPpg(overallPpgRes.rows),
+      },
+      mpStats: {
+        matches: mpMatches,
+        wins: mpWins,
+        losses: mpLosses,
+        winPct: mpWinPct,
+        currentStreak: mpCurrentRun,
+        bestStreak: mpBestRun,
+        headToHead: h2hRows,
       },
     });
   } finally {
