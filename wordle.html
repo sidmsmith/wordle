@@ -101,6 +101,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
 #mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
 #mp-win-sub{font-size:0.6rem;color:#565758;font-style:italic}
+#mp-win-first{font-size:0.62rem;color:#6aaa64;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px}
 #mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
 #mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
 /* Header side-groups for balanced centering */
@@ -248,6 +249,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
 #mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
 #mp-win-sub{font-size:0.6rem;color:#565758;font-style:italic}
+#mp-win-first{font-size:0.62rem;color:#6aaa64;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px}
 #mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
 #mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
 </style>
@@ -361,6 +363,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
   <div id="mp-win-name"></div>
   <div id="mp-win-word"></div>
   <div id="mp-win-sub"></div>
+  <div id="mp-win-first"></div>
   <button id="mp-win-rematch">REMATCH</button>
   <button id="mp-win-close">BACK TO SOLO</button>
 </div>
@@ -742,9 +745,12 @@ function submitGuess(){
   }
   if(currentGuess.toLowerCase()===targetWord){
     gameOver=true;
+    // Capture first-word stats before finalizeGame clears activeGame.
+    const mpFirstWord=activeGame&&activeGame.guesses.length>0?activeGame.guesses[0]:null;
+    const mpFirstRemaining=activeGame&&activeGame.remaining_counts.length>0?activeGame.remaining_counts[0]:null;
     finalizeGame("win");
     if(mpRoomId){
-      mpReportWin(currentRow+1);
+      mpReportWin(currentRow+1,mpFirstWord,mpFirstRemaining);
     }
     setTimeout(()=>{
       showMessage("You won!",0);
@@ -1397,7 +1403,7 @@ function mpSubscribeRoom(roomId){
   mpRoomChannel.subscribe("player-won",(msg)=>{
     const d=JSON.parse(msg.data);
     const iWon=(d.winner===getUsername().toLowerCase());
-    mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count);
+    mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count,d.first_word,d.first_remaining);
   });
   mpRoomChannel.subscribe("room-abandoned",(msg)=>{
     const d=JSON.parse(msg.data||"{}");
@@ -1702,7 +1708,7 @@ function mpStartGame(word,roomId){
   initGame({word,multiplayer:true});
 }
 
-async function mpReportWin(guessesCount){
+async function mpReportWin(guessesCount,firstWord,firstRemaining){
   if(mpWinReported) return;
   mpWinReported=true;
   clearTimeout(mpGameTimer);
@@ -1710,7 +1716,14 @@ async function mpReportWin(guessesCount){
     await fetch(MP_ROOM_URL,{
       method:"PATCH",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"win",room_id:mpRoomId,username:getUsername(),guesses_count:guessesCount})
+      body:JSON.stringify({
+        action:"win",
+        room_id:mpRoomId,
+        username:getUsername(),
+        guesses_count:guessesCount,
+        first_word:firstWord||null,
+        first_remaining:firstRemaining!=null?firstRemaining:null
+      })
     });
   }catch(_){}
   // The server publishes player-won via Ably; our own subscription will show the modal.
@@ -1742,7 +1755,7 @@ function mpTimeout(){
 }
 
 // ── Winner modal ──────────────────────────────────────────────────────────────
-function mpShowWinModal(iWon,winner,word,guessCount){
+function mpShowWinModal(iWon,winner,word,guessCount,firstWord,firstRemaining){
   clearTimeout(mpGameTimer);
   gameOver=true;
   const card=document.getElementById("mp-win-card");
@@ -1753,14 +1766,23 @@ function mpShowWinModal(iWon,winner,word,guessCount){
     document.getElementById("mp-win-name").textContent="NO WINNER!";
     document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()}`;
     document.getElementById("mp-win-sub").textContent="Nobody solved it this time!";
+    document.getElementById("mp-win-first").textContent="";
   }else if(iWon){
     document.getElementById("mp-win-name").textContent="YOU WIN!";
     document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()}`;
     document.getElementById("mp-win-sub").textContent=`Solved in ${guessCount} guess${guessCount!==1?"es":""}!`;
+    document.getElementById("mp-win-first").textContent="";
   }else{
     document.getElementById("mp-win-name").textContent=`${winner.toUpperCase()} WINS!`;
     document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()} (${guessCount} guess${guessCount!==1?"es":""})`;
     document.getElementById("mp-win-sub").textContent="Better luck next time!";
+    const firstEl=document.getElementById("mp-win-first");
+    if(firstWord){
+      const rem=firstRemaining!=null?` (${firstRemaining})`:"";
+      firstEl.textContent=`First word: ${firstWord.toUpperCase()}${rem}`;
+    }else{
+      firstEl.textContent="";
+    }
   }
   document.getElementById("mp-win-modal").classList.add("open");
 }
