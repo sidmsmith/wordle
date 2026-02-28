@@ -277,7 +277,10 @@ export default async function handler(req, res) {
           `UPDATE multiplayer_rooms SET status='abandoned', ended_at=NOW() WHERE id=$1`,
           [room_id]
         );
+        // Publish to both the room channel AND the lobby channel so players
+        // who are no longer subscribed to this room still hear the cancellation.
         await ablyPublish(`wordle-room-${room_id}`, "room-abandoned", { room_id });
+        await ablyPublish("wordle-lobby", "room-abandoned", { room_id });
         return res.status(200).json({ ok: true });
       }
 

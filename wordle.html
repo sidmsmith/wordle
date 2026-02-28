@@ -1471,9 +1471,29 @@ function mpSubscribeLobby(){
     // Only refresh the visible list if the modal is currently open.
     if(document.getElementById("mp-modal").classList.contains("open")) mpLoadLobbyPlayers();
   });
+  mpLobbyChannel.subscribe("room-abandoned",(msg)=>{
+    // Also listen on the lobby channel so we hear cancellations for rooms
+    // we are no longer subscribed to (e.g. a second invite pushed us off the first room).
+    const d=JSON.parse(msg.data||"{}");
+    if(!d.room_id) return;
+    const had=mpPendingInvites.some(inv=>inv.room_id===d.room_id);
+    mpPendingInvites=mpPendingInvites.filter(inv=>inv.room_id!==d.room_id);
+    if(had){
+      // Re-subscribe to next pending invite's room if any.
+      if(mpPendingInvites.length>0){
+        mpSubscribeRoom(mpPendingInvites[mpPendingInvites.length-1].room_id);
+      }else if(!mpRoomId){
+        mpUnsubscribeRoom();
+      }
+      if(document.getElementById("mp-modal").classList.contains("open")) mpRenderInvitations();
+    }
+  });
   mpLobbyChannel.subscribe("invite",(msg)=>{
     const d=JSON.parse(msg.data);
     if(d.invitee===getUsername().toLowerCase()){
+      // Ignore if already in a game, or if this exact room invite is already pending.
+      if(mpRoomId) return;
+      if(mpPendingInvites.some(inv=>inv.room_id===d.room_id)) return;
       mpPendingInvites.push({host:d.host,room_id:d.room_id});
       mpSubscribeRoom(d.room_id);
       // If the winner modal is showing (e.g. player is on the rematch screen),
@@ -1694,13 +1714,18 @@ function mpRenderInvitations(){
 }
 
 async function mpAcceptInvite(inv,idx){
-  mpPendingInvites.splice(idx,1);
+  if(mpRoomId) return; // already in a game — ignore (race condition guard)
+  // Clear ALL pending invites; we're committing to exactly this room.
+  mpPendingInvites=[];
   mpRenderInvitations();
   mpRoomId=inv.room_id;
   mpRole="player";
+  // If a later invite had switched mpRoomChannel to a different room, resubscribe.
+  if(!mpRoomChannel||mpRoomChannel.name!==`wordle-room-${inv.room_id}`){
+    mpSubscribeRoom(inv.room_id);
+  }
   document.getElementById("mp-accepted-msg").textContent=`Waiting for ${inv.host.toUpperCase()} to start the game...`;
   mpShowView("accepted");
-  mpSubscribeRoom(inv.room_id);
   try{
     await fetch(MP_ROOM_URL,{
       method:"PATCH",
@@ -1713,10 +1738,14 @@ async function mpAcceptInvite(inv,idx){
 async function mpDeclineInvite(inv,idx){
   mpPendingInvites.splice(idx,1);
   mpRenderInvitations();
-  // Unsubscribe from the room channel so a game-start for this room
-  // does not force-start a player who declined.
-  if(mpRoomChannel&&mpRoomChannel.name==="wordle-room-"+inv.room_id){
-    mpUnsubscribeRoom();
+  if(mpRoomChannel&&mpRoomChannel.name===`wordle-room-${inv.room_id}`){
+    // If there are other pending invites, subscribe to the most recent one.
+    // Otherwise unsubscribe entirely so no stale game-start events fire.
+    if(mpPendingInvites.length>0){
+      mpSubscribeRoom(mpPendingInvites[mpPendingInvites.length-1].room_id);
+    }else{
+      mpUnsubscribeRoom();
+    }
   }
   try{
     await fetch(MP_ROOM_URL,{
@@ -1792,6 +1821,7 @@ async function mpCancelRoom(){
     mpRole=null;
     mpUnsubscribeRoom();
   }
+  mpPendingInvites=[];  // clear any stale invites
   mpSelectedPlayers.clear();
   mpShowView("lobby");
   await mpLoadLobbyPlayers();
@@ -1904,6 +1934,7 @@ function mpShowWinModal(iWon,winner,word,guessCount,firstWord,firstRemaining){
 function mpCloseWinModal(){
   document.getElementById("mp-win-modal").classList.remove("open");
   mpRoomId=null;mpRole=null;mpWinReported=false;
+  mpPendingInvites=[];  // clear any stale invites accumulated while in game
   mpUnsubscribeRoom();
   updateGearBtn();
 }
