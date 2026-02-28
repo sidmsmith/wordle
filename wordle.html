@@ -1398,6 +1398,7 @@ function saveUsername(){
   localStorage.setItem(THEME_KEY,JSON.stringify(theme));
   applyTheme(theme);
   closeUserModal();
+  updateMpBtnOffline();
   // Ensure background heartbeat is running (first-time users won't have it yet).
   mpLoadAbly().then(()=>{ mpSubscribeLobby(); mpStartBgHeartbeat(); }).catch(()=>{});
   // Refresh stats if the stats page is open.
@@ -1913,8 +1914,10 @@ function mpShowView(name){
 function updateMpBtnOffline(){
   const btn=document.getElementById("mp-btn");
   const offline=!navigator.onLine;
-  btn.classList.toggle("offline",offline);
-  btn.title=offline?"Multiplayer unavailable offline":"";
+  const isGuest=(getUsername().toLowerCase()==="guest");
+  const disabled=offline||isGuest;
+  btn.classList.toggle("offline",disabled);
+  btn.title=offline?"Multiplayer unavailable offline":isGuest?"Sign in with a real name to use Multiplayer":"";
 }
 window.addEventListener("online",updateMpBtnOffline);
 window.addEventListener("offline",updateMpBtnOffline);
