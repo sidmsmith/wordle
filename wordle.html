@@ -855,7 +855,12 @@ function handleKeyInput(key){
 }
 
 document.addEventListener("keydown",(e)=>{
+  // Prevent Backspace from triggering browser "go back" navigation.
+  // Skip prevention when an actual text input is focused (e.g. username field).
+  const tag=document.activeElement&&document.activeElement.tagName;
+  const inInput=tag==="INPUT"||tag==="TEXTAREA";
   if(e.key==="Enter"||e.key==="Backspace"){
+    if(!inInput) e.preventDefault();
     if(e.key==="Enter"){
       handleKeyInput("ENTER");
     }else if(e.key==="Backspace"){
