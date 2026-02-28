@@ -753,10 +753,15 @@ function submitGuess(){
   }else if(currentRow===MAX_GUESSES-1){
     gameOver=true;
     finalizeGame("loss");
-    setTimeout(()=>{
-      showMessage(`You lost! The word was ${targetWord.toUpperCase()}`,0);
-      if(!mpRoomId) document.getElementById("new-game-btn").style.display="block";
-    },600);
+    if(mpRoomId){
+      mpReportBust();
+      setTimeout(()=>showMessage("Out of guesses! Waiting for others...",0),600);
+    }else{
+      setTimeout(()=>{
+        showMessage(`You lost! The word was ${targetWord.toUpperCase()}`,0);
+        document.getElementById("new-game-btn").style.display="block";
+      },600);
+    }
   }else{
     currentRow++;
     currentGuess="";
@@ -1711,6 +1716,18 @@ async function mpReportWin(guessesCount){
   // The server publishes player-won via Ably; our own subscription will show the modal.
 }
 
+async function mpReportBust(){
+  try{
+    await fetch(MP_ROOM_URL,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"bust",room_id:mpRoomId,username:getUsername()})
+    });
+  }catch(_){}
+  // Server will publish player-won (winner:null) if all players have busted,
+  // or player-status so others know this player is done.
+}
+
 function mpTimeout(){
   if(!mpRoomId) return;
   fetch(MP_ROOM_URL,{
@@ -1729,11 +1746,22 @@ function mpShowWinModal(iWon,winner,word,guessCount){
   clearTimeout(mpGameTimer);
   gameOver=true;
   const card=document.getElementById("mp-win-card");
-  card.className=iWon?"":"loss";
-  document.getElementById("mp-win-trophy").textContent=iWon?"🏆":"";
-  document.getElementById("mp-win-name").textContent=iWon?"YOU WIN!":`${winner.toUpperCase()} WINS!`;
-  document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()}`;
-  document.getElementById("mp-win-sub").textContent=iWon?`Solved in ${guessCount} guess${guessCount!==1?"es":""}!`:"Better luck next time!";
+  const noWinner=!winner;
+  card.className=(iWon&&!noWinner)?"":"loss";
+  document.getElementById("mp-win-trophy").textContent=(iWon&&!noWinner)?"🏆":"";
+  if(noWinner){
+    document.getElementById("mp-win-name").textContent="NO WINNER!";
+    document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()}`;
+    document.getElementById("mp-win-sub").textContent="Nobody solved it this time!";
+  }else if(iWon){
+    document.getElementById("mp-win-name").textContent="YOU WIN!";
+    document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()}`;
+    document.getElementById("mp-win-sub").textContent=`Solved in ${guessCount} guess${guessCount!==1?"es":""}!`;
+  }else{
+    document.getElementById("mp-win-name").textContent=`${winner.toUpperCase()} WINS!`;
+    document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()} (${guessCount} guess${guessCount!==1?"es":""})`;
+    document.getElementById("mp-win-sub").textContent="Better luck next time!";
+  }
   document.getElementById("mp-win-modal").classList.add("open");
 }
 

@@ -220,6 +220,55 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
+      // bust ───────────────────────────────────────────────────────────────
+      // A player exhausted all 6 guesses without winning.
+      if (action === "bust") {
+        // Guard: ignore if room already finished.
+        const { rows: [roomCheck] } = await client.query(
+          `SELECT status FROM multiplayer_rooms WHERE id=$1`,
+          [room_id]
+        );
+        if (!roomCheck || roomCheck.status === "complete" || roomCheck.status === "abandoned") {
+          return res.status(200).json({ ok: true });
+        }
+
+        await client.query(
+          `UPDATE multiplayer_players SET status='lost', finished_at=NOW()
+           WHERE room_id=$1 AND username=$2`,
+          [room_id, user]
+        );
+
+        // Count players who are still actively playing.
+        const { rows: [{ count }] } = await client.query(
+          `SELECT COUNT(*) AS count FROM multiplayer_players
+           WHERE room_id=$1 AND status='playing'`,
+          [room_id]
+        );
+
+        if (parseInt(count) === 0) {
+          // Everyone has busted — declare no winner.
+          const { rows: [roomData] } = await client.query(
+            `SELECT target_word FROM multiplayer_rooms WHERE id=$1`,
+            [room_id]
+          );
+          await client.query(
+            `UPDATE multiplayer_rooms SET status='complete', ended_at=NOW() WHERE id=$1`,
+            [room_id]
+          );
+          await ablyPublish(`wordle-room-${room_id}`, "player-won", {
+            winner: null,
+            target_word: roomData.target_word,
+            guesses_count: null,
+          });
+        } else {
+          // Others are still playing — just update their status view.
+          const { players } = await getRoomWithPlayers(client, room_id);
+          await ablyPublish(`wordle-room-${room_id}`, "player-status", { players });
+        }
+
+        return res.status(200).json({ ok: true });
+      }
+
       // abandon ────────────────────────────────────────────────────────────
       if (action === "abandon") {
         await client.query(
