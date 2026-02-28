@@ -22,10 +22,10 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .tile.flip{animation:flip 0.5s}
 @keyframes flip{0%{transform:scaleY(1)}50%{transform:scaleY(0)}100%{transform:scaleY(1)}}
 #message{min-height:clamp(30px,4vh,40px);text-align:center;font-size:clamp(0.875rem,2.5vh,1.2rem);margin:0;font-weight:600;flex-shrink:0}
-#new-game-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,12px) clamp(16px,4vw,24px);font-size:clamp(0.9rem,2.5vh,1.1rem);font-weight:600;border-radius:4px;cursor:pointer;margin:0;display:none;flex-shrink:0}
+#new-game-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,12px) clamp(24px,6vw,36px);font-size:clamp(0.9rem,2.5vh,1.1rem);font-weight:600;border-radius:6px;cursor:pointer;display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;box-shadow:0 2px 12px rgba(0,0,0,0.5)}
 #new-game-btn:hover{background:#5a9a54}
 #new-game-btn:active{transform:scale(0.98)}
-#keyboard{display:flex;flex-direction:column;gap:clamp(4px,1vh,8px);width:100%;max-width:500px;padding:0 clamp(5px,2vw,10px);flex-shrink:0}
+#keyboard{display:flex;flex-direction:column;gap:clamp(4px,1vh,8px);width:100%;max-width:500px;padding:0 clamp(5px,2vw,10px);flex-shrink:0;position:relative}
 .keyboard-row{display:flex;justify-content:center;gap:clamp(4px,1vw,6px);width:100%}
 .keyboard-key{flex:1;max-width:43px;height:clamp(36px,7vh,58px);display:flex;align-items:center;justify-content:center;background:#818384;color:#fff;border:none;border-radius:4px;font-size:clamp(0.7rem,2vh,0.875rem);font-weight:700;text-transform:uppercase;cursor:pointer;user-select:none;touch-action:manipulation;transition:all 0.1s}
 .keyboard-key:active{transform:scale(0.95);opacity:0.8}
@@ -100,7 +100,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #mp-win-trophy{font-size:2.4rem;line-height:1}
 #mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
 #mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
-#mp-win-sub{font-size:0.6rem;color:#565758;font-style:italic}
+#mp-win-sub{font-size:0.62rem;color:#9ca3af;font-style:normal}
 #mp-win-first{font-size:0.62rem;color:#6aaa64;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px}
 #mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
 #mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
@@ -267,7 +267,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #mp-win-trophy{font-size:2.4rem;line-height:1}
 #mp-win-name{font-size:1.3rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
 #mp-win-word{font-size:0.7rem;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase}
-#mp-win-sub{font-size:0.6rem;color:#565758;font-style:italic}
+#mp-win-sub{font-size:0.62rem;color:#9ca3af;font-style:normal}
 #mp-win-first{font-size:0.62rem;color:#6aaa64;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px}
 #mp-win-rematch{background:#538d4e;color:#fff;border:none;border-radius:4px;padding:9px 0;font-size:0.8rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;width:100%}
 #mp-win-close{background:none;border:none;color:#818384;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;padding:4px}
@@ -294,7 +294,6 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 </div>
 <div id="board"></div>
 <div id="message"></div>
-<button id="new-game-btn">New Game</button>
 <div id="keyboard">
 <div class="keyboard-row">
 <div class="keyboard-key" data-key="Q">Q</div>
@@ -330,6 +329,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div class="keyboard-key" data-key="M">M</div>
 <div class="keyboard-key wide" data-key="BACKSPACE">⌫</div>
 </div>
+<button id="new-game-btn">New Game</button>
 </div>
 </div>
 
@@ -798,14 +798,18 @@ function submitGuess(){
   }
   if(currentGuess.toLowerCase()===targetWord){
     gameOver=true;
-    // Capture first-word stats before finalizeGame clears activeGame.
+    // Capture first-word and last-remaining stats before finalizeGame clears activeGame.
     // Use mpGameTracker for MP games (activeGame is null during multiplayer).
     const _tracker=mpRoomId?mpGameTracker:activeGame;
     const mpFirstWord=_tracker&&_tracker.guesses.length>0?_tracker.guesses[0]:null;
     const mpFirstRemaining=_tracker&&_tracker.remaining_counts.length>0?_tracker.remaining_counts[0]:null;
+    // Remaining words BEFORE the winning guess (how "lucky" the win was).
+    const mpLastRemaining=currentRow>0&&_tracker&&_tracker.remaining_counts.length>=currentRow
+      ?_tracker.remaining_counts[currentRow-1]
+      :WORDS.length;
     finalizeGame("win");
     if(mpRoomId){
-      mpReportWin(currentRow+1,mpFirstWord,mpFirstRemaining);
+      mpReportWin(currentRow+1,mpFirstWord,mpFirstRemaining,mpLastRemaining);
     }
     setTimeout(()=>{
       showMessage("You won!",0);
@@ -1551,7 +1555,7 @@ function mpSubscribeRoom(roomId){
   mpRoomChannel.subscribe("player-won",(msg)=>{
     const d=JSON.parse(msg.data);
     const iWon=(d.winner===getUsername().toLowerCase());
-    mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count,d.first_word,d.first_remaining);
+    mpShowWinModal(iWon,d.winner,d.target_word,d.guesses_count,d.first_word,d.first_remaining,d.last_remaining);
   });
   mpRoomChannel.subscribe("room-abandoned",(msg)=>{
     const d=JSON.parse(msg.data||"{}");
@@ -1866,7 +1870,7 @@ function mpStartGame(word,roomId){
   initGame({word,multiplayer:true});
 }
 
-async function mpReportWin(guessesCount,firstWord,firstRemaining){
+async function mpReportWin(guessesCount,firstWord,firstRemaining,lastRemaining){
   if(mpWinReported) return;
   mpWinReported=true;
   clearTimeout(mpGameTimer);
@@ -1880,7 +1884,8 @@ async function mpReportWin(guessesCount,firstWord,firstRemaining){
         username:getUsername(),
         guesses_count:guessesCount,
         first_word:firstWord||null,
-        first_remaining:firstRemaining!=null?firstRemaining:null
+        first_remaining:firstRemaining!=null?firstRemaining:null,
+        last_remaining:lastRemaining!=null?lastRemaining:null
       })
     });
   }catch(_){}
@@ -1913,7 +1918,7 @@ function mpTimeout(){
 }
 
 // ── Winner modal ──────────────────────────────────────────────────────────────
-function mpShowWinModal(iWon,winner,word,guessCount,firstWord,firstRemaining){
+function mpShowWinModal(iWon,winner,word,guessCount,firstWord,firstRemaining,lastRemaining){
   clearTimeout(mpGameTimer);
   gameOver=true;
   const card=document.getElementById("mp-win-card");
@@ -1932,8 +1937,10 @@ function mpShowWinModal(iWon,winner,word,guessCount,firstWord,firstRemaining){
     document.getElementById("mp-win-first").textContent="";
   }else{
     document.getElementById("mp-win-name").textContent=`${winner.toUpperCase()} WINS!`;
-    document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()} (${guessCount} guess${guessCount!==1?"es":""})`;
-    document.getElementById("mp-win-sub").textContent="Better luck next time!";
+    document.getElementById("mp-win-word").textContent=`The word was ${word.toUpperCase()}`;
+    const guessLabel=`${guessCount} Guess${guessCount!==1?"es":""}`;
+    const remLabel=lastRemaining!=null?`, ${lastRemaining} Remaining`:"";
+    document.getElementById("mp-win-sub").textContent=guessLabel+remLabel;
     const firstEl=document.getElementById("mp-win-first");
     if(firstWord){
       const rem=firstRemaining!=null?` (${firstRemaining})`:"";

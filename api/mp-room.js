@@ -186,7 +186,7 @@ export default async function handler(req, res) {
 
       // win ────────────────────────────────────────────────────────────────
       if (action === "win") {
-        const { guesses_count, first_word, first_remaining } = req.body;
+        const { guesses_count, first_word, first_remaining, last_remaining } = req.body;
 
         // Guard against duplicate win reports.
         const { rows: [room] } = await client.query(
@@ -218,6 +218,7 @@ export default async function handler(req, res) {
           guesses_count,
           first_word: first_word || null,
           first_remaining: first_remaining != null ? first_remaining : null,
+          last_remaining: last_remaining != null ? last_remaining : null,
         });
         return res.status(200).json({ ok: true });
       }
