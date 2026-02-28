@@ -1623,6 +1623,9 @@ function closeMpModal(){
   // Do NOT unsubscribe from lobby — keep it alive so future invites arrive
   // even when the modal is closed.
   if(!mpRoomId) mpUnsubscribeRoom();
+  // If the game is already over (finished solo or MP game) and we're not
+  // mid-MP, start a fresh solo game so the board isn't stuck in the old state.
+  if(gameOver && !mpRoomId) initGame();
 }
 
 // ── Background heartbeat (runs whenever app is in foreground) ─────────────────
