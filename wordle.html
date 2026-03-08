@@ -859,8 +859,10 @@ document.addEventListener("keydown",(e)=>{
   // Skip prevention when an actual text input is focused (e.g. username field).
   const tag=document.activeElement&&document.activeElement.tagName;
   const inInput=tag==="INPUT"||tag==="TEXTAREA";
+  // While typing in inputs (username/settings), never route keys to the game.
+  if(inInput) return;
   if(e.key==="Enter"||e.key==="Backspace"){
-    if(!inInput) e.preventDefault();
+    e.preventDefault();
     if(e.key==="Enter"){
       handleKeyInput("ENTER");
     }else if(e.key==="Backspace"){
