@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DB View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;background:#121213;color:#fff;min-height:100vh;display:flex;flex-direction:column}
+.db-hdr{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid #3a3a3c;flex-shrink:0;gap:12px}
+.db-back{background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:4px 8px;touch-action:manipulation}
+.db-back:hover{color:#9ca3af}
+.db-title{font-size:1rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9ca3af}
+.db-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px;border-bottom:1px solid #3a3a3c;flex-shrink:0}
+.db-tab{background:#2a2a2c;border:1px solid #3a3a3c;color:#9ca3af;padding:8px 12px;font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;border-radius:4px;touch-action:manipulation}
+.db-tab:hover{background:#333;color:#fff}
+.db-tab.active{background:#538d4e;border-color:#538d4e;color:#fff}
+.db-wrap{flex:1;overflow:auto;padding:10px}
+.db-msg{text-align:center;padding:20px;color:#9ca3af;font-size:0.85rem}
+.db-table-wrap{overflow:auto;max-width:100%;border:1px solid #3a3a3c;border-radius:4px}
+.db-table{border-collapse:collapse;min-width:100%;font-size:0.72rem}
+.db-table th,.db-table td{padding:6px 8px;text-align:left;border-bottom:1px solid #2a2a2c}
+.db-table th{background:#1a1a1b;color:#9ca3af;font-weight:700;letter-spacing:0.05em;cursor:pointer;user-select:none;white-space:nowrap}
+.db-table th:hover{background:#2a2a2c;color:#fff}
+.db-table th.sorted{color:#538d4e}
+.db-table td{color:#e5e7eb}
+.db-table tr:hover td{background:#1a1a1b}
+.db-table .num{text-align:right}
+.db-table .json{max-width:200px;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<div class="db-hdr">
+<button class="db-back" id="db-back" aria-label="Back">&#8592;</button>
+<span class="db-title">Database View</span>
+</div>
+<div class="db-tabs" id="db-tabs">
+<button class="db-tab active" data-table="wordle_games">Wordle Games</button>
+<button class="db-tab" data-table="multiplayer_rooms">Rooms</button>
+<button class="db-tab" data-table="multiplayer_players">Players</button>
+<button class="db-tab" data-table="multiplayer_lobby">Lobby</button>
+</div>
+<div class="db-wrap">
+<p class="db-msg" id="db-msg">Loading...</p>
+<div class="db-table-wrap" id="db-table-wrap" style="display:none">
+<table class="db-table" id="db-table">
+<thead id="db-thead"></thead>
+<tbody id="db-tbody"></tbody>
+</table>
+</div>
+</div>
+<script>
+const API_BASE="https://wordle-theta-red.vercel.app/api";
+const TABLES=["wordle_games","multiplayer_rooms","multiplayer_players","multiplayer_lobby"];
+
+let currentTable="wordle_games";
+let currentRows=[];
+let sortCol=null;
+let sortAsc=true;
+
+document.getElementById("db-back").onclick=()=>history.back();
+
+document.getElementById("db-tabs").onclick=e=>{
+  const tab=e.target.closest(".db-tab");
+  if(!tab)return;
+  currentTable=tab.dataset.table;
+  document.querySelectorAll(".db-tab").forEach(t=>t.classList.remove("active"));
+  tab.classList.add("active");
+  load();
+};
+
+async function load(){
+  document.getElementById("db-msg").textContent="Loading...";
+  document.getElementById("db-msg").style.display="block";
+  document.getElementById("db-table-wrap").style.display="none";
+  try{
+    const r=await fetch(`${API_BASE}/wordle-db?table=${encodeURIComponent(currentTable)}`);
+    if(!r.ok)throw new Error(r.statusText);
+    const data=await r.json();
+    currentRows=data.rows||[];
+    render();
+  }catch(e){
+    document.getElementById("db-msg").textContent="Error: "+e.message;
+    document.getElementById("db-msg").style.display="block";
+    document.getElementById("db-table-wrap").style.display="none";
+  }
+}
+
+function render(){
+  if(currentRows.length===0){
+    document.getElementById("db-msg").textContent="No rows.";
+    document.getElementById("db-msg").style.display="block";
+    document.getElementById("db-table-wrap").style.display="none";
+    return;
+  }
+  let rows=[...currentRows];
+  const cols=Object.keys(rows[0]);
+  if(sortCol&&cols.includes(sortCol)){
+    rows.sort((a,b)=>{
+      const av=a[sortCol],bv=b[sortCol];
+      const an=typeof av==="number"||!isNaN(parseFloat(av));
+      const bn=typeof bv==="number"||!isNaN(parseFloat(bv));
+      if(an&&bn){
+        const diff=(parseFloat(av)||0)-(parseFloat(bv)||0);
+        return sortAsc?diff:-diff;
+      }
+      const sa=String(av??""),sb=String(bv??"");
+      return sortAsc?sa.localeCompare(sb):sb.localeCompare(sa);
+    });
+  }
+  const thead=document.getElementById("db-thead");
+  thead.innerHTML="<tr>"+cols.map(c=>`<th class="${typeof rows[0][c]==="number"?"num":""}" data-col="${c}">${c}</th>`).join("")+"</tr>";
+  thead.querySelectorAll("th").forEach(th=>{
+    if(th.dataset.col===sortCol)th.classList.add("sorted");
+    th.onclick=()=>{
+      const col=th.dataset.col;
+      sortAsc=col===sortCol?!sortAsc:true;
+      sortCol=col;
+      render();
+    };
+  });
+  const tbody=document.getElementById("db-tbody");
+  tbody.innerHTML=rows.map(r=>"<tr>"+cols.map(c=>{
+    let v=r[c];
+    if(v==null)v="";
+    else if(typeof v==="object")v=JSON.stringify(v);
+    else if(typeof v==="string"&&v.length>80)v=v.slice(0,80)+"...";
+    const cls=typeof r[c]==="number"?"num":(typeof v==="string"&&v.startsWith("{")?"json":"");
+    return `<td class="${cls}" title="${String(v).replace(/"/g,"&quot;")}">${escapeHtml(String(v))}</td>`;
+  }).join("")+"</tr>").join("");
+  document.getElementById("db-msg").style.display="none";
+  document.getElementById("db-table-wrap").style.display="block";
+}
+
+function escapeHtml(s){
+  const d=document.createElement("div");
+  d.textContent=s;
+  return d.innerHTML;
+}
+
+load();
+</script>
+</body>
+</html>

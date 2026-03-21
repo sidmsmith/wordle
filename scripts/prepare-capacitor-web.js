@@ -43,6 +43,17 @@ html = html.replace(
 
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");
 
+// --- db-view.html: patch for native context ---
+const dbViewSrc = path.join(projectRoot, "db-view.html");
+if (fs.existsSync(dbViewSrc)) {
+  let dbViewHtml = fs.readFileSync(dbViewSrc, "utf8");
+  dbViewHtml = dbViewHtml.replace(
+    'const API_BASE="/api"',
+    `const API_BASE="${BASE}/api"` // full API base for native WebView
+  );
+  fs.writeFileSync(path.join(webDir, "db-view.html"), dbViewHtml, "utf8");
+}
+
 // --- Binary / static assets ---
 const staticFiles = [
   { from: "wordle.png",    to: "wordle.png" },
