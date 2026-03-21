@@ -16,21 +16,13 @@ if (!fs.existsSync(htmlSrc)) {
 
 let html = fs.readFileSync(htmlSrc, "utf8");
 
-const BASE = "https://wordle-theta-red.vercel.app";
-
-// wordle.html uses API_ORIGIN (same as BASE) for all /api calls so browser and WebView match.
+// wordle.html and db-view.html use API_ORIGIN for /api so browser and WebView match.
 
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");
 
-// --- db-view.html: patch for native context ---
 const dbViewSrc = path.join(projectRoot, "db-view.html");
 if (fs.existsSync(dbViewSrc)) {
-  let dbViewHtml = fs.readFileSync(dbViewSrc, "utf8");
-  dbViewHtml = dbViewHtml.replace(
-    'const API_BASE="/api"',
-    `const API_BASE="${BASE}/api"` // full API base for native WebView
-  );
-  fs.writeFileSync(path.join(webDir, "db-view.html"), dbViewHtml, "utf8");
+  fs.copyFileSync(dbViewSrc, path.join(webDir, "db-view.html"));
 }
 
 // --- Binary / static assets ---

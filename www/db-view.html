@@ -50,7 +50,9 @@ body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;backgrou
 </div>
 </div>
 <script>
-const API_BASE="https://wordle-theta-red.vercel.app/api";
+// Same origin as wordle.html so DB view works in browser (file/localhost), not only WebView.
+const API_ORIGIN="https://wordle-theta-red.vercel.app";
+const API_BASE=`${API_ORIGIN}/api`;
 const TABLES=["wordle_games","multiplayer_rooms","multiplayer_players","multiplayer_lobby"];
 
 let currentTable="wordle_games";
