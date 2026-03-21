@@ -18,28 +18,7 @@ let html = fs.readFileSync(htmlSrc, "utf8");
 
 const BASE = "https://wordle-theta-red.vercel.app";
 
-// Replace all relative /api/ calls with absolute Vercel URLs so the native
-// WebView (served from http://localhost) can reach the cloud endpoints.
-html = html.replace(
-  'fetch("/api/wordle-sync",{',
-  `fetch("${BASE}/api/wordle-sync",{`
-);
-html = html.replace(
-  'fetch(`/api/wordle-stats?username=',
-  `fetch(\`${BASE}/api/wordle-stats?username=`
-);
-html = html.replace(
-  'fetch("/api/wordle-users")',
-  `fetch("${BASE}/api/wordle-users")`
-);
-html = html.replace(
-  `const MP_HEARTBEAT_URL="/api/mp-heartbeat"`,
-  `const MP_HEARTBEAT_URL="${BASE}/api/mp-heartbeat"`
-);
-html = html.replace(
-  `const MP_ROOM_URL="/api/mp-room"`,
-  `const MP_ROOM_URL="${BASE}/api/mp-room"`
-);
+// wordle.html uses API_ORIGIN (same as BASE) for all /api calls so browser and WebView match.
 
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");
 
