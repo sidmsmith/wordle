@@ -20,6 +20,14 @@ let html = fs.readFileSync(htmlSrc, "utf8");
 
 fs.writeFileSync(path.join(webDir, "index.html"), html, "utf8");
 
+// Extract WORDS array for db-view game modal (possible-words filtering)
+const wordsMatch = html.match(/const WORDS=(\[[\s\S]*?\]);/);
+if (wordsMatch) {
+  const wordsJs = "const WORDS=" + wordsMatch[1] + ";";
+  fs.writeFileSync(path.join(projectRoot, "words.js"), wordsJs, "utf8");
+  fs.writeFileSync(path.join(webDir, "words.js"), wordsJs, "utf8");
+}
+
 const dbViewSrc = path.join(projectRoot, "db-view.html");
 if (fs.existsSync(dbViewSrc)) {
   fs.copyFileSync(dbViewSrc, path.join(webDir, "db-view.html"));
