@@ -34,6 +34,48 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .keyboard-key.correct{background:var(--clr-correct)}
 .keyboard-key.present{background:var(--clr-present)}
 .keyboard-key.absent{background:var(--clr-absent)}
+/* ── Game title (opens picker) ───────────────────────────── */
+.game-title-btn{background:none;border:none;color:inherit;font:inherit;font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margin:0;text-transform:uppercase;flex-shrink:0;cursor:pointer;touch-action:manipulation;padding:2px 6px;border-radius:4px}
+.game-title-btn:hover,.game-title-btn:active{color:#9ca3af}
+/* ── Game picker modal ───────────────────────────────────── */
+#game-picker-modal{display:none;position:fixed;inset:0;z-index:350;align-items:center;justify-content:center}
+#game-picker-modal.open{display:flex}
+#game-picker-bd{position:absolute;inset:0;background:rgba(0,0,0,0.85)}
+#game-picker-card{position:relative;background:#1a1a1b;border:1px solid #3a3a3c;border-radius:8px;width:min(92vw,340px);max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+#game-picker-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #3a3a3c;flex-shrink:0}
+#game-picker-hdr span{font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9ca3af}
+#game-picker-x{background:none;border:none;color:#818384;font-size:1.1rem;cursor:pointer;padding:2px 6px}
+#game-picker-x:hover{color:#fff}
+#game-picker-list{padding:10px 12px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.gp-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#2a2a2c;border:1px solid #3a3a3c;border-radius:6px;cursor:pointer;touch-action:manipulation;user-select:none}
+.gp-row:hover{background:#333}
+.gp-row.current{border-color:#538d4e;background:#1b2b1b}
+.gp-row.disabled{opacity:0.45;cursor:not-allowed;pointer-events:none}
+.gp-name{font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff}
+.gp-tag{font-size:0.55rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#565758}
+.gp-check{color:#538d4e;font-weight:700;font-size:1rem;opacity:0}
+.gp-row.current .gp-check{opacity:1}
+/* ── Waffle (NYT-style 5×5, 4 holes) ───────────────────────── */
+#wordle-root{display:flex;flex-direction:column;align-items:center;width:100%;gap:clamp(2px,0.8vh,6px);flex:1;min-height:0;overflow:hidden}
+#waffle-root{display:none;flex-direction:column;align-items:center;width:100%;flex:1;min-height:0;overflow:hidden;gap:clamp(4px,1vh,8px)}
+#waffle-board{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(3px,0.8vw,5px);width:100%;max-width:min(350px,90vw);flex-shrink:0}
+.waffle-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:2px solid #3a3a3c;background:#121213;color:#fff;font-size:clamp(1rem,4vh,1.75rem);font-weight:700;text-transform:uppercase;border-radius:2px;touch-action:manipulation;transition:background 0.12s,border-color 0.12s}
+.waffle-cell.hole{background:#0d0d0e;border-color:#1a1a1b;pointer-events:none}
+.waffle-cell.locked{cursor:default}
+.waffle-cell:not(.locked):not(.hole){cursor:pointer}
+.waffle-cell:not(.locked):not(.hole):hover{border-color:#565758}
+.waffle-cell.selected{outline:2px solid #fff;outline-offset:1px;z-index:1}
+.waffle-cell.correct{background:var(--clr-correct);border-color:var(--clr-correct)}
+.waffle-cell.present{background:var(--clr-present);border-color:var(--clr-present)}
+.waffle-cell.absent{background:var(--clr-absent);border-color:var(--clr-absent)}
+.waffle-cell.split-rc{background:linear-gradient(135deg,var(--clr-correct) 50%,var(--clr-present) 50%);border-color:#565758}
+.waffle-cell.split-pr{background:linear-gradient(135deg,var(--clr-present) 50%,var(--clr-absent) 50%);border-color:#565758}
+.waffle-cell.split-ca{background:linear-gradient(135deg,var(--clr-correct) 50%,var(--clr-absent) 50%);border-color:#565758}
+#waffle-meta{font-size:clamp(0.75rem,2vh,0.95rem);font-weight:700;color:#9ca3af;letter-spacing:0.06em}
+#waffle-msg{min-height:clamp(28px,3.5vh,36px);text-align:center;font-size:clamp(0.8rem,2.2vh,1rem);font-weight:600;color:#fff;flex-shrink:0;padding:0 8px}
+#waffle-new-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,10px) clamp(20px,5vw,28px);font-size:clamp(0.8rem,2vh,0.95rem);font-weight:600;border-radius:6px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
+#waffle-new-btn:hover{background:#5a9a54}
+#waffle-hint{font-size:0.58rem;color:#565758;text-align:center;max-width:340px;padding:0 10px;line-height:1.35}
 /* ── Header bar ───────────────────────────────────────────── */
 #header{position:relative;display:flex;align-items:center;justify-content:center;width:100%;flex-shrink:0}
 #stats-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;display:flex;align-items:center;touch-action:manipulation}
@@ -281,7 +323,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="9" width="4" height="12" rx="1"/></svg>
 </button>
 </div>
-<h1>WORDLE</h1>
+<button type="button" id="game-title-btn" class="game-title-btn" aria-haspopup="dialog" aria-expanded="false">WORDLE</button>
 <div id="hdr-right">
 <button id="mp-btn" aria-label="Multiplayer">
 <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
@@ -291,6 +333,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 </button>
 </div>
 </div>
+<div id="wordle-root">
 <div id="board"></div>
 <div id="message"></div>
 <div id="keyboard">
@@ -329,6 +372,29 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div class="keyboard-key wide" data-key="BACKSPACE">⌫</div>
 </div>
 <button id="new-game-btn">New Game</button>
+</div>
+</div>
+<div id="waffle-root">
+<div id="waffle-board"></div>
+<div id="waffle-meta"></div>
+<div id="waffle-msg"></div>
+<p id="waffle-hint">Tap two tiles to swap. Green tiles are fixed. Solve all six words within 15 swaps.</p>
+<button type="button" id="waffle-new-btn">New Waffle</button>
+</div>
+</div>
+
+<div id="game-picker-modal" role="dialog" aria-modal="true" aria-labelledby="game-picker-title">
+<div id="game-picker-bd"></div>
+<div id="game-picker-card">
+<div id="game-picker-hdr">
+<span id="game-picker-title">Choose a game</span>
+<button type="button" id="game-picker-x" aria-label="Close">✕</button>
+</div>
+<div id="game-picker-list">
+<button type="button" class="gp-row" data-game="wordle" role="menuitem"><span class="gp-name">Wordle</span><span class="gp-check">✓</span></button>
+<button type="button" class="gp-row" data-game="waffle" role="menuitem"><span class="gp-name">Waffle</span><span class="gp-check">✓</span></button>
+<div class="gp-row disabled" aria-disabled="true"><span class="gp-name">Waffle Numbers</span><span class="gp-tag">Future</span></div>
+</div>
 </div>
 </div>
 
@@ -532,6 +598,8 @@ let guessHistory=[];
 let isSyncInProgress=false;
 let syncRetryMs=2000;
 const MAX_SYNC_RETRY_MS=60000;
+const GAME_MODE_KEY="wordle_app_game";
+let currentGameMode="wordle";
 
 const STORAGE_KEYS={
   deviceId:"wordle_device_id",
@@ -837,6 +905,7 @@ function submitGuess(){
 }
 
 function handleKeyInput(key){
+  if(currentGameMode!=="wordle")return;
   if(gameOver){
     // Don't start a solo game while a multiplayer game is active.
     if(key==="ENTER"&&!mpRoomId) initGame();
@@ -864,6 +933,7 @@ document.addEventListener("keydown",(e)=>{
   const inInput=tag==="INPUT"||tag==="TEXTAREA";
   // While typing in inputs (username/settings), never route keys to the game.
   if(inInput) return;
+  if(currentGameMode!=="wordle") return;
   if(e.key==="Enter"||e.key==="Backspace"){
     e.preventDefault();
     if(e.key==="Enter"){
@@ -878,6 +948,7 @@ document.addEventListener("keydown",(e)=>{
 
 document.querySelectorAll(".keyboard-key").forEach(key=>{
   key.addEventListener("click",()=>{
+    if(currentGameMode!=="wordle") return;
     const keyValue=key.dataset.key;
     if(keyValue==="BACKSPACE"){
       handleKeyInput("BACKSPACE");
@@ -934,6 +1005,16 @@ function showMessage(text,duration=2000){
   el.textContent=text;
   clearTimeout(_msgTimer);
   if(duration>0) _msgTimer=setTimeout(()=>{el.textContent="";},duration);
+}
+
+let _waffleToastTimer=null;
+function showWaffleToast(text,duration=2500){
+  const el=document.getElementById("waffle-msg");
+  if(!el)return;
+  el.textContent=text;
+  clearTimeout(_waffleToastTimer);
+  if(duration>0) _waffleToastTimer=setTimeout(()=>{el.textContent="";},duration);
+  else _waffleToastTimer=null;
 }
 
 function ordinal(n){
@@ -1052,6 +1133,10 @@ function closeWordsModal(){
 }
 
 document.getElementById("remaining-btn").addEventListener("click",()=>{
+  if(currentGameMode!=="wordle"){
+    showWaffleToast("Word count is for Wordle.");
+    return;
+  }
   const d=getDifficulty();
   if(d!=="easy"){
     showMessage("Word list only available in Easy mode",2000);
@@ -1435,11 +1520,19 @@ document.getElementById("user-input").addEventListener("keydown",function(e){
 document.getElementById("user-save").addEventListener("click",saveUsername);
 document.getElementById("stats-gear").addEventListener("click",openUserModal);
 document.getElementById("gear-btn").addEventListener("click",()=>{
+  if(currentGameMode!=="wordle"){
+    showWaffleToast("Settings apply to Wordle.");
+    return;
+  }
   populateThemePickers();
   openUserModal();
 });
 
 document.getElementById("stats-btn").addEventListener("click",()=>{
+  if(currentGameMode!=="wordle"){
+    showWaffleToast("Statistics are for Wordle.");
+    return;
+  }
   document.getElementById("stats-page").classList.add("visible");
   loadStats();
 });
@@ -1592,6 +1685,10 @@ async function mpLoadAbly(){
 }
 
 async function openMpModal(){
+  if(currentGameMode!=="wordle"){
+    showWaffleToast("Multiplayer is for Wordle.");
+    return;
+  }
   await mpLoadAbly();
   const u=getUsername();
   if(!u){openUserModal();return;}
@@ -1614,7 +1711,7 @@ function closeMpModal(){
   if(!mpRoomId) mpUnsubscribeRoom();
   // If the game is already over (finished solo or MP game) and we're not
   // mid-MP, start a fresh solo game so the board isn't stuck in the old state.
-  if(gameOver && !mpRoomId) initGame();
+  if(gameOver && !mpRoomId && currentGameMode==="wordle") initGame();
 }
 
 // ── Background heartbeat (runs whenever app is in foreground) ─────────────────
@@ -2004,7 +2101,244 @@ document.getElementById("mp-win-close").addEventListener("click",()=>{
   initGame();
 });
 
-initGame();
+// ── Game picker + Waffle (NYT-style grid) ───────────────────────────────────
+function isWaffleHole(r,c){
+  return (r===1||r===3)&&(c===1||c===3);
+}
+function wafflePlayableCells(){
+  const out=[];
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    if(!isWaffleHole(r,c))out.push([r,c]);
+  }
+  return out;
+}
+function tryGenerateWaffleSolution(){
+  const pick=()=>WORDS[Math.floor(Math.random()*WORDS.length)];
+  for(let t=0;t<800;t++){
+    const w0=pick(),w2=pick(),w4=pick();
+    const v0opts=WORDS.filter(w=>w[0]===w0[0]&&w[2]===w2[0]&&w[4]===w4[0]);
+    if(!v0opts.length)continue;
+    const v0=v0opts[Math.floor(Math.random()*v0opts.length)];
+    const v1opts=WORDS.filter(w=>w[0]===w0[2]&&w[2]===w2[2]&&w[4]===w4[2]);
+    if(!v1opts.length)continue;
+    const v1=v1opts[Math.floor(Math.random()*v1opts.length)];
+    const v2opts=WORDS.filter(w=>w[0]===w0[4]&&w[2]===w2[4]&&w[4]===w4[4]);
+    if(!v2opts.length)continue;
+    const v2=v2opts[Math.floor(Math.random()*v2opts.length)];
+    const sol=Array.from({length:5},()=>Array(5).fill(""));
+    for(let c=0;c<5;c++){sol[0][c]=w0[c];sol[2][c]=w2[c];sol[4][c]=w4[c];}
+    for(let r=0;r<5;r++){sol[r][0]=v0[r];sol[r][2]=v1[r];sol[r][4]=v2[r];}
+    let ok=true;
+    for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+      if(isWaffleHole(r,c))continue;
+      const ch=sol[r][c];
+      if((r===0||r===2||r===4)&&(r===0?w0:r===2?w2:w4)[c]!==ch)ok=false;
+      if((c===0||c===2||c===4)&&(c===0?v0:c===2?v1:v2)[r]!==ch)ok=false;
+    }
+    if(!ok)continue;
+    return{sol,words:{w0,w2,w4,v0,v1,v2}};
+  }
+  return null;
+}
+function shuffleInPlace(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+let waffleData=null;
+let waffleSwapsLeft=15;
+let waffleOver=false;
+let wafflePick=null;
+let waffleCells=null;
+
+function waffleRowGuess(r){
+  let s="";
+  for(let c=0;c<5;c++)s+=isWaffleHole(r,c)?"":waffleData.grid[r][c];
+  return s;
+}
+function waffleColGuess(c){
+  let s="";
+  for(let r=0;r<5;r++)s+=isWaffleHole(r,c)?"":waffleData.grid[r][c];
+  return s;
+}
+function waffleCellVisualClass(r,c){
+  if(isWaffleHole(r,c))return[];
+  const ch=waffleData.grid[r][c];
+  const sol=waffleData.sol[r][c];
+  if(waffleData.locked.has(r+","+c))return["locked","correct"];
+  if(ch===sol)return["correct"];
+  let rs=null,cs=null;
+  if(r===0||r===2||r===4){
+    const tgt=r===0?waffleData.words.w0:r===2?waffleData.words.w2:waffleData.words.w4;
+    const states=getTileState(waffleRowGuess(r),tgt);
+    rs=states[c];
+  }
+  if(c===0||c===2||c===4){
+    const tgt=c===0?waffleData.words.v0:c===2?waffleData.words.v1:waffleData.words.v2;
+    const states=getTileState(waffleColGuess(c),tgt);
+    cs=states[r];
+  }
+  if(rs===null) return cs==="present"?["present"]:["absent"];
+  if(cs===null) return rs==="present"?["present"]:["absent"];
+  if(rs==="present"&&cs==="present")return["present"];
+  if(rs==="absent"&&cs==="absent")return["absent"];
+  if(rs==="present"&&cs==="absent")return["split-pr"];
+  if(rs==="absent"&&cs==="present")return["split-pr"];
+  return["present"];
+}
+function waffleSolved(){
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    if(isWaffleHole(r,c))continue;
+    if(waffleData.grid[r][c]!==waffleData.sol[r][c])return false;
+  }
+  return true;
+}
+function waffleRender(){
+  if(!waffleData||!waffleCells)return;
+  document.getElementById("waffle-meta").textContent=waffleOver
+    ?(waffleSolved()?"Solved!":"Out of swaps")
+    :`${waffleSwapsLeft} swap${waffleSwapsLeft!==1?"s":""} left`;
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    const el=waffleCells[r][c];
+    if(isWaffleHole(r,c))continue;
+    el.textContent=waffleData.grid[r][c].toUpperCase();
+    el.className="waffle-cell";
+    if(waffleData.locked.has(r+","+c))el.classList.add("locked");
+    waffleCellVisualClass(r,c).forEach(cl=>el.classList.add(cl));
+    el.classList.toggle("selected",wafflePick&&wafflePick.r===r&&wafflePick.c===c);
+  }
+}
+function waffleOnCellClick(r,c){
+  if(waffleOver||isWaffleHole(r,c)||waffleData.locked.has(r+","+c))return;
+  if(!wafflePick){wafflePick={r,c};waffleRender();return;}
+  if(wafflePick.r===r&&wafflePick.c===c){wafflePick=null;waffleRender();return;}
+  if(waffleData.locked.has(wafflePick.r+","+wafflePick.c)){wafflePick=null;return;}
+  const pr=wafflePick.r,pc=wafflePick.c;
+  const tmp=waffleData.grid[r][c];
+  waffleData.grid[r][c]=waffleData.grid[pr][pc];
+  waffleData.grid[pr][pc]=tmp;
+  waffleSwapsLeft--;
+  wafflePick=null;
+  if(waffleSolved()){
+    waffleOver=true;
+    showWaffleToast("Waffle solved!",0);
+  }else if(waffleSwapsLeft<=0){
+    waffleOver=true;
+    showWaffleToast("No swaps left.",0);
+  }
+  waffleRender();
+}
+function initWaffleGame(){
+  waffleData=null;
+  waffleCells=null;
+  const gen=tryGenerateWaffleSolution();
+  if(!gen){
+    showWaffleToast("Could not build a puzzle — try again.");
+    return;
+  }
+  const playable=wafflePlayableCells();
+  const locked=new Set();
+  const lockCount=7+Math.floor(Math.random()*4);
+  const shuffled=[...playable];
+  shuffleInPlace(shuffled);
+  for(let i=0;i<Math.min(lockCount,playable.length-8);i++){
+    locked.add(shuffled[i][0]+","+shuffled[i][1]);
+  }
+  const grid=gen.sol.map(row=>row.slice());
+  const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
+  const letters=movable.map(([r,c])=>grid[r][c]);
+  shuffleInPlace(letters);
+  let guard=0;
+  do{
+    shuffleInPlace(letters);
+    movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
+    guard++;
+  }while(waffleSolved()&&guard<40);
+  waffleData={sol:gen.sol,grid,words:gen.words,locked};
+  waffleSwapsLeft=15;
+  waffleOver=false;
+  wafflePick=null;
+  const host=document.getElementById("waffle-board");
+  host.innerHTML="";
+  waffleCells=Array.from({length:5},()=>Array(5).fill(null));
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    let el;
+    if(isWaffleHole(r,c)){
+      el=document.createElement("div");
+      el.className="waffle-cell hole";
+      el.setAttribute("aria-hidden","true");
+    }else{
+      el=document.createElement("button");
+      el.type="button";
+      el.className="waffle-cell";
+      el.addEventListener("click",()=>waffleOnCellClick(r,c));
+    }
+    host.appendChild(el);
+    waffleCells[r][c]=el;
+  }
+  document.getElementById("waffle-msg").textContent="";
+  waffleRender();
+}
+function updateGamePickerUI(){
+  document.querySelectorAll("#game-picker-list .gp-row[data-game]").forEach(row=>{
+    row.classList.toggle("current",row.dataset.game===currentGameMode);
+  });
+}
+function openGamePicker(){
+  updateGamePickerUI();
+  document.getElementById("game-picker-modal").classList.add("open");
+  document.getElementById("game-title-btn").setAttribute("aria-expanded","true");
+}
+function closeGamePicker(){
+  document.getElementById("game-picker-modal").classList.remove("open");
+  document.getElementById("game-title-btn").setAttribute("aria-expanded","false");
+}
+function applyGameMode(mode,forceInit){
+  if(mpRoomId&&mode!=="wordle"){
+    showWaffleToast("Finish multiplayer before switching games.");
+    return;
+  }
+  const changed=mode!==currentGameMode;
+  currentGameMode=mode;
+  try{localStorage.setItem(GAME_MODE_KEY,mode);}catch(_){}
+  document.getElementById("game-title-btn").textContent=mode==="waffle"?"WAFFLE":"WORDLE";
+  document.title=mode==="waffle"?"Waffle":"Wordle";
+  document.getElementById("wordle-root").style.display=mode==="wordle"?"flex":"none";
+  document.getElementById("waffle-root").style.display=mode==="waffle"?"flex":"none";
+  if(changed||forceInit){
+    if(mode==="wordle") initGame();
+    else{
+      initWaffleGame();
+      if(!waffleData){
+        currentGameMode="wordle";
+        try{localStorage.setItem(GAME_MODE_KEY,"wordle");}catch(_){}
+        document.getElementById("game-title-btn").textContent="WORDLE";
+        document.title="Wordle";
+        document.getElementById("wordle-root").style.display="flex";
+        document.getElementById("waffle-root").style.display="none";
+        initGame();
+        closeGamePicker();
+        updateGamePickerUI();
+        return;
+      }
+    }
+  }
+  closeGamePicker();
+  updateGamePickerUI();
+}
+document.getElementById("game-title-btn").addEventListener("click",openGamePicker);
+document.getElementById("game-picker-x").addEventListener("click",closeGamePicker);
+document.getElementById("game-picker-bd").addEventListener("click",closeGamePicker);
+document.querySelectorAll("#game-picker-list .gp-row[data-game]").forEach(row=>{
+  row.addEventListener("click",()=>{
+    applyGameMode(row.dataset.game,false);
+  });
+});
+document.getElementById("waffle-new-btn").addEventListener("click",()=>initWaffleGame());
+
+const _savedGame=localStorage.getItem(GAME_MODE_KEY)||"wordle";
+applyGameMode(_savedGame==="waffle"?"waffle":"wordle",true);
 trySyncPendingGames();
 
 // Auto-prompt for username on load if none stored.
