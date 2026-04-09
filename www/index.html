@@ -169,6 +169,9 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #user-divider{border:none;border-top:1px solid #3a3a3c;margin:8px 0 6px}
 #diff-section{margin-top:10px;padding-top:10px;border-top:1px solid #3a3a3c}
 #diff-label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;margin-bottom:5px}
+#waffle-diff-label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#565758;text-align:center;margin:10px 0 6px}
+#waffle-diff-btns{display:flex;border:1px solid #3a3a3c;border-radius:4px;overflow:hidden}
+#waffle-diff-desc{font-size:0.58rem;color:#9ca3af;text-align:center;margin-top:6px;line-height:1.35}
 #diff-btns{display:flex;border:1px solid #3a3a3c;border-radius:4px;overflow:hidden}
 .diff-btn{flex:1;background:#1a1a1b;border:none;border-right:1px solid #3a3a3c;color:#565758;font-size:0.6rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:8px 3px;cursor:pointer;touch-action:manipulation;transition:background 0.15s,color 0.15s}
 .diff-btn:last-child{border-right:none}
@@ -473,6 +476,15 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
     </div>
     <div id="diff-desc"></div>
   </div>
+  <div id="waffle-diff-section" style="display:none">
+    <div id="waffle-diff-label">WAFFLE — GREEN TILES (NEXT GAME)</div>
+    <div id="waffle-diff-btns">
+      <button type="button" class="diff-btn waffle-diff-btn" data-value="easy">EASY</button>
+      <button type="button" class="diff-btn waffle-diff-btn" data-value="normal">NORMAL</button>
+      <button type="button" class="diff-btn waffle-diff-btn" data-value="hard">HARD</button>
+    </div>
+    <div id="waffle-diff-desc"></div>
+  </div>
   <div id="theme-section">
     <div id="theme-label">TILE COLORS</div>
     <div id="theme-rows">
@@ -604,6 +616,7 @@ let syncRetryMs=2000;
 const MAX_SYNC_RETRY_MS=60000;
 const GAME_MODE_KEY="wordle_app_game";
 let currentGameMode="wordle";
+const WAFFLE_DIFF_KEY="waffle_difficulty";
 
 const STORAGE_KEYS={
   deviceId:"wordle_device_id",
@@ -672,6 +685,11 @@ function getUsername(){
 
 function getDifficulty(){
   return localStorage.getItem("wordle_difficulty")||"normal";
+}
+
+function getWaffleDifficulty(){
+  const v=localStorage.getItem(WAFFLE_DIFF_KEY)||"normal";
+  return v==="easy"||v==="normal"||v==="hard"?v:"normal";
 }
 
 function createGameSession(){
@@ -1366,6 +1384,29 @@ const DIFF_DESCS={
   hard:"Must use revealed green & yellow letters",
   superhard:"Hard Mode + avoid gray letters & fix yellow positions"
 };
+const WAFFLE_DIFF_DESCS={
+  easy:"7–8 green (fixed) tiles — more to build on.",
+  normal:"6–7 greens — balanced.",
+  hard:"5–6 greens — fewer anchors."
+};
+
+function updateWaffleDifficultyButtons(){
+  const d=getWaffleDifficulty();
+  document.querySelectorAll(".waffle-diff-btn").forEach(btn=>{
+    btn.classList.toggle("active",btn.dataset.value===d);
+  });
+  const el=document.getElementById("waffle-diff-desc");
+  if(el) el.textContent=WAFFLE_DIFF_DESCS[d]||"";
+}
+
+function syncUserModalForGameMode(){
+  const waff=currentGameMode==="waffle";
+  const ds=document.getElementById("diff-section");
+  const ws=document.getElementById("waffle-diff-section");
+  if(ds) ds.style.display=waff?"none":"";
+  if(ws) ws.style.display=waff?"block":"none";
+  if(waff) updateWaffleDifficultyButtons();
+}
 
 function updateDifficultyButtons(){
   const d=getDifficulty();
@@ -1387,6 +1428,13 @@ document.getElementById("diff-btns").addEventListener("click",e=>{
   if(activeGame&&guessHistory.length===0) activeGame.difficulty=value;
 });
 
+document.getElementById("waffle-diff-btns").addEventListener("click",e=>{
+  const btn=e.target.closest(".waffle-diff-btn");
+  if(!btn) return;
+  localStorage.setItem(WAFFLE_DIFF_KEY,btn.dataset.value);
+  updateWaffleDifficultyButtons();
+});
+
 /* ── Username modal ───────────────────────────────────────── */
 function updateGearBtn(){
   const btn=document.getElementById("gear-btn");
@@ -1405,6 +1453,7 @@ async function openUserModal(){
   chips.innerHTML="";
   updateDifficultyButtons();
   populateThemePickers();
+  syncUserModalForGameMode();
   document.getElementById("user-modal").classList.add("open");
   // Only auto-focus the text input for first-time users (no username yet).
   // For returning users, focus Save so the mobile keyboard doesn't auto-open.
@@ -1537,10 +1586,7 @@ document.getElementById("user-input").addEventListener("keydown",function(e){
 document.getElementById("user-save").addEventListener("click",saveUsername);
 document.getElementById("stats-gear").addEventListener("click",openUserModal);
 document.getElementById("gear-btn").addEventListener("click",()=>{
-  if(currentGameMode!=="wordle"){
-    showWaffleToast("Settings apply to Wordle.");
-    return;
-  }
+  if(mpRoomId) return;
   populateThemePickers();
   openUserModal();
 });
@@ -2129,6 +2175,56 @@ function wafflePlayableCells(){
   }
   return out;
 }
+/** The six 5-letter answer lines (rows 0,2,4 and cols 0,2,4). */
+function waffleWordLines(){
+  return [
+    [[0,0],[0,1],[0,2],[0,3],[0,4]],
+    [[2,0],[2,1],[2,2],[2,3],[2,4]],
+    [[4,0],[4,1],[4,2],[4,3],[4,4]],
+    [[0,0],[1,0],[2,0],[3,0],[4,0]],
+    [[0,2],[1,2],[2,2],[3,2],[4,2]],
+    [[0,4],[1,4],[2,4],[3,4],[4,4]],
+  ];
+}
+function waffleTargetGreenCount(){
+  const d=getWaffleDifficulty();
+  if(d==="easy")return 7+Math.floor(Math.random()*2);
+  if(d==="hard")return 5+Math.floor(Math.random()*2);
+  return 6+Math.floor(Math.random()*2);
+}
+/**
+ * Pick exactly n locked (green) cells: always ≥2 on one word line as an anchor,
+ * then bias toward corners and center, then edge-centers, then random fill.
+ */
+function chooseWaffleLockedCells(playable,n){
+  const key=(r,c)=>r+","+c;
+  const playableSet=new Set(playable.map(([r,c])=>key(r,c)));
+  const lines=waffleWordLines();
+  const anchorLine=lines[Math.floor(Math.random()*lines.length)];
+  const anchorCells=[];
+  for(const [r,c] of anchorLine){
+    const k=key(r,c);
+    if(playableSet.has(k)){
+      anchorCells.push(k);
+      if(anchorCells.length>=2)break;
+    }
+  }
+  if(anchorCells.length<2){
+    const sh=[...playable];
+    shuffleInPlace(sh);
+    return new Set(sh.slice(0,Math.min(n,sh.length)).map(([r,c])=>key(r,c)));
+  }
+  const needExtras=Math.max(0,n-anchorCells.length);
+  const cornerOrder=[[0,0],[0,4],[4,0],[4,4],[2,2]].map(([r,c])=>key(r,c)).filter(k=>playableSet.has(k)&&!anchorCells.includes(k));
+  const edgeOrder=[[0,2],[2,0],[2,4],[4,2]].map(([r,c])=>key(r,c)).filter(k=>playableSet.has(k)&&!anchorCells.includes(k));
+  const co=new Set(cornerOrder);
+  const eo=new Set(edgeOrder);
+  const rest=playable.map(([r,c])=>key(r,c)).filter(k=>!anchorCells.includes(k)&&!co.has(k)&&!eo.has(k));
+  shuffleInPlace(rest);
+  const extrasOrdered=[...cornerOrder,...edgeOrder,...rest];
+  const extras=extrasOrdered.slice(0,needExtras);
+  return new Set([...anchorCells,...extras]);
+}
 function tryGenerateWaffleSolution(){
   const pick=()=>WORDS[Math.floor(Math.random()*WORDS.length)];
   for(let t=0;t<2500;t++){
@@ -2259,13 +2355,8 @@ function initWaffleGame(){
     return;
   }
   const playable=wafflePlayableCells();
-  const locked=new Set();
-  const lockCount=7+Math.floor(Math.random()*4);
-  const shuffled=[...playable];
-  shuffleInPlace(shuffled);
-  for(let i=0;i<Math.min(lockCount,playable.length-8);i++){
-    locked.add(shuffled[i][0]+","+shuffled[i][1]);
-  }
+  const nGreen=waffleTargetGreenCount();
+  const locked=chooseWaffleLockedCells(playable,nGreen);
   const grid=gen.sol.map(row=>row.slice());
   const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
   const letters=movable.map(([r,c])=>grid[r][c]);
