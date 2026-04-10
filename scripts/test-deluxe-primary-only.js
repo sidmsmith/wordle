@@ -77,6 +77,32 @@ function tryGenerate(maxT, dict, patIndex) {
 const patIndex = buildPatternIndex(WORDS);
 console.log(`words7.txt only: ${WORDS.length} seven-letter words`);
 
+/** How often random row words admit a dict word for every column (same check as generator). */
+function measureColumnClosure(samples) {
+  const pick = () => WORDS[Math.floor(Math.random() * WORDS.length)];
+  let ok = 0;
+  for (let s = 0; s < samples; s++) {
+    const h = [];
+    for (let i = 0; i < k; i++) h.push(pick());
+    let bad = false;
+    for (let j = 0; j < k; j++) {
+      const key = [0, 1, 2, 3].map((col) => h[col][axes[j]]).join("");
+      if (!patIndex.get(key)?.length) {
+        bad = true;
+        break;
+      }
+    }
+    if (!bad) ok++;
+  }
+  return { ok, samples };
+}
+
+const closureSamples = Number(process.env.CLOSURE_SAMPLES || 200_000);
+const closure = measureColumnClosure(closureSamples);
+console.log(
+  `Column closure (all 4 vertical patterns exist in list): ${closure.ok} / ${closure.samples} random row quartets`
+);
+
 const trials = Number(process.env.TRIALS || 200);
 const maxT = Number(process.env.MAX_T || 20000);
 let successes = 0;
