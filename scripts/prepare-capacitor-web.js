@@ -47,5 +47,10 @@ for (const file of staticFiles) {
   fs.copyFileSync(src, path.join(webDir, file.to));
 }
 
+const words7Gen = path.join(projectRoot, "words7.generated.js");
+if (fs.existsSync(words7Gen)) {
+  fs.copyFileSync(words7Gen, path.join(webDir, "words7.generated.js"));
+}
+
 console.log("✓ Capacitor web assets written to ./www");
 console.log("  Next: npx cap sync android");

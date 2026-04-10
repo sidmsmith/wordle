@@ -76,6 +76,14 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #waffle-new-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,10px) clamp(20px,5vw,28px);font-size:clamp(0.8rem,2vh,0.95rem);font-weight:600;border-radius:6px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
 #waffle-new-btn:hover{background:#5a9a54}
 #waffle-hint{font-size:0.58rem;color:#565758;text-align:center;max-width:340px;padding:0 10px;line-height:1.35}
+/* Waffle Deluxe 7×7 */
+#waffle-deluxe-root{display:none;flex-direction:column;align-items:center;width:100%;flex:1;min-height:0;overflow:hidden;gap:clamp(4px,1vh,8px)}
+#waffle-dx-board{display:grid;grid-template-columns:repeat(7,1fr);gap:clamp(2px,0.6vw,4px);width:100%;max-width:min(490px,92vw);flex-shrink:0}
+#waffle-dx-meta{font-size:clamp(0.75rem,2vh,0.95rem);font-weight:700;color:#9ca3af;letter-spacing:0.06em}
+#waffle-dx-msg{min-height:clamp(28px,3.5vh,36px);text-align:center;font-size:clamp(0.8rem,2.2vh,1rem);font-weight:600;color:#fff;flex-shrink:0;padding:0 8px}
+#waffle-dx-new-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,10px) clamp(20px,5vw,28px);font-size:clamp(0.8rem,2vh,0.95rem);font-weight:600;border-radius:6px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
+#waffle-dx-new-btn:hover{background:#5a9a54}
+#waffle-dx-hint{font-size:0.58rem;color:#565758;text-align:center;max-width:480px;padding:0 10px;line-height:1.35}
 /* ── Header bar ───────────────────────────────────────────── */
 #header{position:relative;display:flex;align-items:center;justify-content:center;width:100%;flex-shrink:0}
 #stats-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;display:flex;align-items:center;touch-action:manipulation}
@@ -386,6 +394,13 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <p id="waffle-hint">Tap two tiles to swap. Green tiles are fixed. Solve all six words within 15 swaps.</p>
 <button type="button" id="waffle-new-btn">New Waffle</button>
 </div>
+<div id="waffle-deluxe-root">
+<div id="waffle-dx-board"></div>
+<div id="waffle-dx-meta"></div>
+<div id="waffle-dx-msg"></div>
+<p id="waffle-dx-hint">Tap two tiles to swap. Green tiles are fixed. Solve all six words within 24 swaps.</p>
+<button type="button" id="waffle-dx-new-btn">New Waffle</button>
+</div>
 </div>
 
 <div id="game-picker-modal" role="dialog" aria-modal="true" aria-labelledby="game-picker-title">
@@ -398,6 +413,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div id="game-picker-list">
 <button type="button" class="gp-row" data-game="wordle" role="menuitem"><span class="gp-name">Wordle</span><span class="gp-check">✓</span></button>
 <button type="button" class="gp-row" data-game="waffle" role="menuitem"><span class="gp-name">Waffle</span><span class="gp-check">✓</span></button>
+<button type="button" class="gp-row" data-game="waffle-deluxe" role="menuitem"><span class="gp-name">Waffle Deluxe</span><span class="gp-check">✓</span></button>
 <div class="gp-row disabled" aria-disabled="true"><span class="gp-name">Waffle Numbers</span><span class="gp-tag">Future</span></div>
 </div>
 </div>
@@ -593,7 +609,9 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 </div>
 </div>
 
+<script src="words7.generated.js" onerror="window.__WORDS7_MISSING=1"></script>
 <script>
+if(typeof WORDS7==="undefined"){var WORDS7=[];}
 // Same host the Capacitor build uses (prepare-capacitor-web.js). Relative /api/ only works
 // when the HTML is served from this origin; opening from file://, Live Server, or another host breaks stats.
 const API_ORIGIN="https://wordle-theta-red.vercel.app";
@@ -616,6 +634,9 @@ let syncRetryMs=2000;
 const MAX_SYNC_RETRY_MS=60000;
 const GAME_MODE_KEY="wordle_app_game";
 let currentGameMode="wordle";
+function isWaffleGameMode(){
+  return currentGameMode==="waffle"||currentGameMode==="waffle-deluxe";
+}
 const WAFFLE_DIFF_KEY="waffle_difficulty";
 
 const STORAGE_KEYS={
@@ -853,6 +874,34 @@ function getTileState(guess,target){
   return states;
 }
 
+/** Wordle tile scoring for arbitrary length (Waffle / Waffle Deluxe). */
+function getTileStateLen(guess,target,len){
+  const states=Array(len).fill("absent");
+  const targetCounts={};
+  const guessCounts={};
+  for(let i=0;i<len;i++){
+    if(guess[i]===target[i])states[i]="correct";
+    targetCounts[target[i]]=(targetCounts[target[i]]||0)+1;
+  }
+  for(let i=0;i<len;i++){
+    if(states[i]==="correct"){
+      guessCounts[guess[i]]=(guessCounts[guess[i]]||0)+1;
+    }
+  }
+  for(let i=0;i<len;i++){
+    if(states[i]!=="correct"){
+      const letter=guess[i];
+      const targetCount=targetCounts[letter]||0;
+      const guessCount=guessCounts[letter]||0;
+      if(target.includes(letter)&&guessCount<targetCount){
+        states[i]="present";
+        guessCounts[letter]=(guessCounts[letter]||0)+1;
+      }
+    }
+  }
+  return states;
+}
+
 function updateLetterStates(guess,states){
   for(let i=0;i<WORD_LENGTH;i++){
     const letter=guess[i].toUpperCase();
@@ -1034,7 +1083,9 @@ function showMessage(text,duration=2000){
 
 let _waffleToastTimer=null;
 function showWaffleToast(text,duration=2500){
-  const el=document.getElementById("waffle-msg");
+  const el=document.getElementById(
+    currentGameMode==="waffle-deluxe"?"waffle-dx-msg":"waffle-msg"
+  );
   if(!el)return;
   el.textContent=text;
   clearTimeout(_waffleToastTimer);
@@ -1384,11 +1435,20 @@ const DIFF_DESCS={
   hard:"Must use revealed green & yellow letters",
   superhard:"Hard Mode + avoid gray letters & fix yellow positions"
 };
-const WAFFLE_DIFF_DESCS={
-  easy:"7–8 green (fixed) tiles — more to build on.",
-  normal:"6–7 greens — balanced.",
-  hard:"5 greens; yellow hints tuned to 5–6 (hardest)."
-};
+function waffleDiffDescs(){
+  if(currentGameMode==="waffle-deluxe"){
+    return{
+      easy:"10–11 green (fixed) tiles — more to build on.",
+      normal:"8–9 greens — balanced.",
+      hard:"8 greens; yellow hints tuned to 8–9 (hardest)."
+    };
+  }
+  return{
+    easy:"7–8 green (fixed) tiles — more to build on.",
+    normal:"6–7 greens — balanced.",
+    hard:"5 greens; yellow hints tuned to 5–6 (hardest)."
+  };
+}
 
 function updateWaffleDifficultyButtons(){
   const d=getWaffleDifficulty();
@@ -1396,11 +1456,11 @@ function updateWaffleDifficultyButtons(){
     btn.classList.toggle("active",btn.dataset.value===d);
   });
   const el=document.getElementById("waffle-diff-desc");
-  if(el) el.textContent=WAFFLE_DIFF_DESCS[d]||"";
+  if(el) el.textContent=waffleDiffDescs()[d]||"";
 }
 
 function syncUserModalForGameMode(){
-  const waff=currentGameMode==="waffle";
+  const waff=isWaffleGameMode();
   const ds=document.getElementById("diff-section");
   const ws=document.getElementById("waffle-diff-section");
   if(ds) ds.style.display=waff?"none":"";
@@ -2164,33 +2224,59 @@ document.getElementById("mp-win-close").addEventListener("click",()=>{
   initGame();
 });
 
-// ── Game picker + Waffle (NYT-style grid) ───────────────────────────────────
+// ── Game picker + Waffle (5×5) & Waffle Deluxe (7×7) ─────────────────────────
+function waffleSize(){
+  return currentGameMode==="waffle-deluxe"?7:5;
+}
+function waffleAxes(){
+  return currentGameMode==="waffle-deluxe"?[0,3,6]:[0,2,4];
+}
+function isWaffleHoleNc(n,axes,r,c){
+  return !axes.includes(r)&&!axes.includes(c);
+}
 function isWaffleHole(r,c){
-  return (r===1||r===3)&&(c===1||c===3);
+  const n=waffleSize(),axes=waffleAxes();
+  return isWaffleHoleNc(n,axes,r,c);
 }
 function wafflePlayableCells(){
+  const n=waffleSize(),axes=waffleAxes();
   const out=[];
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-    if(!isWaffleHole(r,c))out.push([r,c]);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    if(!isWaffleHoleNc(n,axes,r,c))out.push([r,c]);
   }
   return out;
 }
-/** The six 5-letter answer lines (rows 0,2,4 and cols 0,2,4). */
+/** Six answer lines: three full rows and three full cols on word axes. */
 function waffleWordLines(){
-  return [
-    [[0,0],[0,1],[0,2],[0,3],[0,4]],
-    [[2,0],[2,1],[2,2],[2,3],[2,4]],
-    [[4,0],[4,1],[4,2],[4,3],[4,4]],
-    [[0,0],[1,0],[2,0],[3,0],[4,0]],
-    [[0,2],[1,2],[2,2],[3,2],[4,2]],
-    [[0,4],[1,4],[2,4],[3,4],[4,4]],
-  ];
+  const n=waffleSize(),axes=waffleAxes();
+  const lines=[];
+  for(const r of axes){
+    lines.push(Array.from({length:n},(_,c)=>[r,c]));
+  }
+  for(const c of axes){
+    lines.push(Array.from({length:n},(_,r)=>[r,c]));
+  }
+  return lines;
 }
 function waffleTargetGreenCount(){
   const d=getWaffleDifficulty();
+  if(currentGameMode==="waffle-deluxe"){
+    if(d==="easy")return 10+Math.floor(Math.random()*2);
+    if(d==="hard")return 8;
+    return 8+Math.floor(Math.random()*2);
+  }
   if(d==="easy")return 7+Math.floor(Math.random()*2);
   if(d==="hard")return 5;
   return 6+Math.floor(Math.random()*2);
+}
+function waffleHardBuildParams(){
+  if(currentGameMode==="waffle-deluxe"){
+    return{nLock:8,yMin:8,yMax:9,minMovable:12};
+  }
+  return{nLock:5,yMin:5,yMax:6,minMovable:8};
+}
+function waffleMaxSwaps(){
+  return currentGameMode==="waffle-deluxe"?24:15;
 }
 /**
  * Pick exactly n locked (green) cells: always ≥2 on one word line as an anchor,
@@ -2215,8 +2301,13 @@ function chooseWaffleLockedCells(playable,n){
     return new Set(sh.slice(0,Math.min(n,sh.length)).map(([r,c])=>key(r,c)));
   }
   const needExtras=Math.max(0,n-anchorCells.length);
-  const cornerOrder=[[0,0],[0,4],[4,0],[4,4],[2,2]].map(([r,c])=>key(r,c)).filter(k=>playableSet.has(k)&&!anchorCells.includes(k));
-  const edgeOrder=[[0,2],[2,0],[2,4],[4,2]].map(([r,c])=>key(r,c)).filter(k=>playableSet.has(k)&&!anchorCells.includes(k));
+  const ax=waffleAxes();
+  const mid=ax[1];
+  const hi=waffleSize()-1;
+  const cornerCoords=[[0,0],[0,hi],[hi,0],[hi,hi],[mid,mid]];
+  const edgeCoords=[[0,mid],[mid,0],[mid,hi],[hi,mid]];
+  const cornerOrder=cornerCoords.map(([r,c])=>key(r,c)).filter(k=>playableSet.has(k)&&!anchorCells.includes(k));
+  const edgeOrder=edgeCoords.map(([r,c])=>key(r,c)).filter(k=>playableSet.has(k)&&!anchorCells.includes(k));
   const co=new Set(cornerOrder);
   const eo=new Set(edgeOrder);
   const rest=playable.map(([r,c])=>key(r,c)).filter(k=>!anchorCells.includes(k)&&!co.has(k)&&!eo.has(k));
@@ -2226,31 +2317,50 @@ function chooseWaffleLockedCells(playable,n){
   return new Set([...anchorCells,...extras]);
 }
 function tryGenerateWaffleSolution(){
-  const pick=()=>WORDS[Math.floor(Math.random()*WORDS.length)];
+  const n=waffleSize();
+  const axes=waffleAxes();
+  const dict=n===7?(typeof WORDS7!=="undefined"&&WORDS7&&WORDS7.length?WORDS7:[]):WORDS;
+  if(!dict.length)return null;
+  const pick=()=>dict[Math.floor(Math.random()*dict.length)];
+  const i0=axes[0],i1=axes[1],i2=axes[2];
   for(let t=0;t<2500;t++){
-    const w0=pick(),w2=pick(),w4=pick();
-    const v0opts=WORDS.filter(w=>w[0]===w0[0]&&w[2]===w2[0]&&w[4]===w4[0]);
+    const h0=pick(),h1=pick(),h2=pick();
+    const v0opts=dict.filter(w=>w[i0]===h0[axes[0]]&&w[i1]===h1[axes[0]]&&w[i2]===h2[axes[0]]);
     if(!v0opts.length)continue;
     const v0=v0opts[Math.floor(Math.random()*v0opts.length)];
-    const v1opts=WORDS.filter(w=>w[0]===w0[2]&&w[2]===w2[2]&&w[4]===w4[2]);
+    const v1opts=dict.filter(w=>w[i0]===h0[axes[1]]&&w[i1]===h1[axes[1]]&&w[i2]===h2[axes[1]]);
     if(!v1opts.length)continue;
     const v1=v1opts[Math.floor(Math.random()*v1opts.length)];
-    const v2opts=WORDS.filter(w=>w[0]===w0[4]&&w[2]===w2[4]&&w[4]===w4[4]);
+    const v2opts=dict.filter(w=>w[i0]===h0[axes[2]]&&w[i1]===h1[axes[2]]&&w[i2]===h2[axes[2]]);
     if(!v2opts.length)continue;
     const v2=v2opts[Math.floor(Math.random()*v2opts.length)];
-    const sol=Array.from({length:5},()=>Array(5).fill(""));
-    for(let c=0;c<5;c++){sol[0][c]=w0[c];sol[2][c]=w2[c];sol[4][c]=w4[c];}
-    for(let r=0;r<5;r++){sol[r][0]=v0[r];sol[r][2]=v1[r];sol[r][4]=v2[r];}
+    const sol=Array.from({length:n},()=>Array(n).fill(""));
+    for(let c=0;c<n;c++){
+      sol[axes[0]][c]=h0[c];
+      sol[axes[1]][c]=h1[c];
+      sol[axes[2]][c]=h2[c];
+    }
+    for(let r=0;r<n;r++){
+      sol[r][axes[0]]=v0[r];
+      sol[r][axes[1]]=v1[r];
+      sol[r][axes[2]]=v2[r];
+    }
     let ok=true;
-    for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-      if(isWaffleHole(r,c))continue;
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+      if(isWaffleHoleNc(n,axes,r,c))continue;
       const ch=sol[r][c];
-      if((r===0||r===2||r===4)&&(r===0?w0:r===2?w2:w4)[c]!==ch)ok=false;
-      if((c===0||c===2||c===4)&&(c===0?v0:c===2?v1:v2)[r]!==ch)ok=false;
+      if(axes.includes(r)){
+        const rowWord=[h0,h1,h2][axes.indexOf(r)];
+        if(rowWord[c]!==ch)ok=false;
+      }
+      if(axes.includes(c)){
+        const colWord=[v0,v1,v2][axes.indexOf(c)];
+        if(colWord[r]!==ch)ok=false;
+      }
     }
     if(!ok)continue;
-    if(new Set([w0,w2,w4,v0,v1,v2]).size!==6)continue;
-    return{sol,words:{w0,w2,w4,v0,v1,v2}};
+    if(new Set([h0,h1,h2,v0,v1,v2]).size!==6)continue;
+    return{sol,words:{h0,h1,h2,v0,v1,v2},n,axes};
   }
   return null;
 }
@@ -2267,27 +2377,33 @@ let wafflePick=null;
 let waffleCells=null;
 
 function waffleRowGuess(r){
+  const n=waffleData.n,axes=waffleData.axes;
   let s="";
-  for(let c=0;c<5;c++)s+=isWaffleHole(r,c)?"":waffleData.grid[r][c];
+  for(let c=0;c<n;c++)s+=isWaffleHoleNc(n,axes,r,c)?"":waffleData.grid[r][c];
   return s;
 }
 function waffleColGuess(c){
+  const n=waffleData.n,axes=waffleData.axes;
   let s="";
-  for(let r=0;r<5;r++)s+=isWaffleHole(r,c)?"":waffleData.grid[r][c];
+  for(let r=0;r<n;r++)s+=isWaffleHoleNc(n,axes,r,c)?"":waffleData.grid[r][c];
   return s;
 }
 function waffleCellVisualClass(r,c){
-  if(isWaffleHole(r,c))return[];
+  const n=waffleData.n,axes=waffleData.axes,L=n;
+  if(isWaffleHoleNc(n,axes,r,c))return[];
   if(waffleData.locked.has(r+","+c))return["locked","correct"];
+  const {h0,h1,h2,v0,v1,v2}=waffleData.words;
+  const horiz=[h0,h1,h2];
+  const vert=[v0,v1,v2];
   let rs=null,cs=null;
-  if(r===0||r===2||r===4){
-    const tgt=r===0?waffleData.words.w0:r===2?waffleData.words.w2:waffleData.words.w4;
-    const states=getTileState(waffleRowGuess(r),tgt);
+  if(axes.includes(r)){
+    const tgt=horiz[axes.indexOf(r)];
+    const states=getTileStateLen(waffleRowGuess(r),tgt,L);
     rs=states[c];
   }
-  if(c===0||c===2||c===4){
-    const tgt=c===0?waffleData.words.v0:c===2?waffleData.words.v1:waffleData.words.v2;
-    const states=getTileState(waffleColGuess(c),tgt);
+  if(axes.includes(c)){
+    const tgt=vert[axes.indexOf(c)];
+    const states=getTileStateLen(waffleColGuess(c),tgt,L);
     cs=states[r];
   }
   const norm=s=>(s==="correct"?"present":s);
@@ -2301,28 +2417,31 @@ function waffleCellVisualClass(r,c){
   if(rs==="absent"&&cs==="present")return["present"];
   return["present"];
 }
-function waffleRowGuessStatic(grid,r){
+function waffleRowGuessStatic(grid,r,n,axes){
   let s="";
-  for(let c=0;c<5;c++)s+=isWaffleHole(r,c)?"":grid[r][c];
+  for(let c=0;c<n;c++)s+=isWaffleHoleNc(n,axes,r,c)?"":grid[r][c];
   return s;
 }
-function waffleColGuessStatic(grid,c){
+function waffleColGuessStatic(grid,c,n,axes){
   let s="";
-  for(let r=0;r<5;r++)s+=isWaffleHole(r,c)?"":grid[r][c];
+  for(let r=0;r<n;r++)s+=isWaffleHoleNc(n,axes,r,c)?"":grid[r][c];
   return s;
 }
-function waffleCellVisualClassStatic(grid,locked,words,r,c){
-  if(isWaffleHole(r,c))return[];
+function waffleCellVisualClassStatic(grid,locked,words,r,c,n,axes){
+  if(isWaffleHoleNc(n,axes,r,c))return[];
   if(locked.has(r+","+c))return["locked","correct"];
+  const {h0,h1,h2,v0,v1,v2}=words;
+  const horiz=[h0,h1,h2];
+  const vert=[v0,v1,v2];
   let rs=null,cs=null;
-  if(r===0||r===2||r===4){
-    const tgt=r===0?words.w0:r===2?words.w2:words.w4;
-    const states=getTileState(waffleRowGuessStatic(grid,r),tgt);
+  if(axes.includes(r)){
+    const tgt=horiz[axes.indexOf(r)];
+    const states=getTileStateLen(waffleRowGuessStatic(grid,r,n,axes),tgt,n);
     rs=states[c];
   }
-  if(c===0||c===2||c===4){
-    const tgt=c===0?words.v0:c===2?words.v1:words.v2;
-    const states=getTileState(waffleColGuessStatic(grid,c),tgt);
+  if(axes.includes(c)){
+    const tgt=vert[axes.indexOf(c)];
+    const states=getTileStateLen(waffleColGuessStatic(grid,c,n,axes),tgt,n);
     cs=states[r];
   }
   const norm=s=>(s==="correct"?"present":s);
@@ -2336,35 +2455,50 @@ function waffleCellVisualClassStatic(grid,locked,words,r,c){
   if(rs==="absent"&&cs==="present")return["present"];
   return["present"];
 }
-function countWaffleYellowTiles(grid,locked,words){
-  let n=0;
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-    if(isWaffleHole(r,c))continue;
+function countWaffleYellowTiles(grid,locked,words,n,axes){
+  let ct=0;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    if(isWaffleHoleNc(n,axes,r,c))continue;
     if(locked.has(r+","+c))continue;
-    if(waffleCellVisualClassStatic(grid,locked,words,r,c).includes("present"))n++;
+    if(waffleCellVisualClassStatic(grid,locked,words,r,c,n,axes).includes("present"))ct++;
   }
-  return n;
+  return ct;
 }
-/**
- * Hard: 5 locks; reshuffle until 5–6 yellow (unlocked) hints, trying several lock sets.
- */
+function waffleGridMatchesSolution(grid,sol){
+  if(!waffleData)return false;
+  const n=waffleData.n,axes=waffleData.axes;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    if(isWaffleHoleNc(n,axes,r,c))continue;
+    if(grid[r][c]!==sol[r][c])return false;
+  }
+  return true;
+}
+function waffleGridMatchesSolutionGen(grid,sol,gen){
+  const n=gen.n,axes=gen.axes;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    if(isWaffleHoleNc(n,axes,r,c))continue;
+    if(grid[r][c]!==sol[r][c])return false;
+  }
+  return true;
+}
 function waffleBuildHardStartGrid(gen,playable){
-  const nLock=5;
+  const{nLock,yMin,yMax,minMovable}=waffleHardBuildParams();
+  const n=gen.n,axes=gen.axes;
   let best=null;
   let bestPen=1e9;
   for(let outer=0;outer<40;outer++){
     const locked=chooseWaffleLockedCells(playable,nLock);
     const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
-    if(movable.length<8)continue;
+    if(movable.length<minMovable)continue;
     const letters=movable.map(([r,c])=>gen.sol[r][c]);
     for(let t=0;t<600;t++){
       shuffleInPlace(letters);
       const grid=gen.sol.map(row=>row.slice());
       movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
-      if(waffleGridMatchesSolution(grid,gen.sol))continue;
-      const y=countWaffleYellowTiles(grid,locked,gen.words);
-      if(y>=5&&y<=6)return{grid,locked};
-      const pen=(y<5?5-y:y>6?y-6:0);
+      if(waffleGridMatchesSolutionGen(grid,gen.sol,gen))continue;
+      const y=countWaffleYellowTiles(grid,locked,gen.words,n,axes);
+      if(y>=yMin&&y<=yMax)return{grid,locked};
+      const pen=(y<yMin?yMin-y:y>yMax?y-yMax:0);
       if(pen<bestPen){
         bestPen=pen;
         best={grid:grid.map(row=>row.slice()),locked};
@@ -2381,27 +2515,30 @@ function waffleBuildHardStartGrid(gen,playable){
     shuffleInPlace(letters);
     movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
     g++;
-  }while(waffleGridMatchesSolution(grid,gen.sol)&&g<100);
+  }while(waffleGridMatchesSolutionGen(grid,gen.sol,gen)&&g<100);
   return{grid,locked};
-}
-function waffleGridMatchesSolution(grid,sol){
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-    if(isWaffleHole(r,c))continue;
-    if(grid[r][c]!==sol[r][c])return false;
-  }
-  return true;
 }
 function waffleSolved(){
   return waffleData?waffleGridMatchesSolution(waffleData.grid,waffleData.sol):false;
 }
+function waffleMetaElId(){
+  return currentGameMode==="waffle-deluxe"?"waffle-dx-meta":"waffle-meta";
+}
+function waffleMsgElId(){
+  return currentGameMode==="waffle-deluxe"?"waffle-dx-msg":"waffle-msg";
+}
+function waffleBoardElId(){
+  return currentGameMode==="waffle-deluxe"?"waffle-dx-board":"waffle-board";
+}
 function waffleRender(){
   if(!waffleData||!waffleCells)return;
-  document.getElementById("waffle-meta").textContent=waffleOver
+  const n=waffleData.n,axes=waffleData.axes;
+  document.getElementById(waffleMetaElId()).textContent=waffleOver
     ?(waffleSolved()?"Solved!":"Out of swaps")
     :`${waffleSwapsLeft} swap${waffleSwapsLeft!==1?"s":""} left`;
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
     const el=waffleCells[r][c];
-    if(isWaffleHole(r,c))continue;
+    if(isWaffleHoleNc(n,axes,r,c))continue;
     el.textContent=waffleData.grid[r][c].toUpperCase();
     el.className="waffle-cell";
     if(waffleData.locked.has(r+","+c))el.classList.add("locked");
@@ -2410,7 +2547,8 @@ function waffleRender(){
   }
 }
 function waffleOnCellClick(r,c){
-  if(waffleOver||isWaffleHole(r,c)||waffleData.locked.has(r+","+c))return;
+  const n=waffleData.n,axes=waffleData.axes;
+  if(waffleOver||isWaffleHoleNc(n,axes,r,c)||waffleData.locked.has(r+","+c))return;
   if(!wafflePick){wafflePick={r,c};waffleRender();return;}
   if(wafflePick.r===r&&wafflePick.c===c){wafflePick=null;waffleRender();return;}
   if(waffleData.locked.has(wafflePick.r+","+wafflePick.c)){wafflePick=null;return;}
@@ -2456,18 +2594,18 @@ function initWaffleGame(){
       shuffleInPlace(letters);
       movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
       guard++;
-    }while(waffleGridMatchesSolution(grid,gen.sol)&&guard<40);
+    }while(waffleGridMatchesSolutionGen(grid,gen.sol,gen)&&guard<40);
   }
-  waffleData={sol:gen.sol,grid,words:gen.words,locked};
-  waffleSwapsLeft=15;
+  waffleData={sol:gen.sol,grid,words:gen.words,locked,n:gen.n,axes:gen.axes};
+  waffleSwapsLeft=waffleMaxSwaps();
   waffleOver=false;
   wafflePick=null;
-  const host=document.getElementById("waffle-board");
+  const host=document.getElementById(waffleBoardElId());
   host.innerHTML="";
-  waffleCells=Array.from({length:5},()=>Array(5).fill(null));
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+  waffleCells=Array.from({length:gen.n},()=>Array(gen.n).fill(null));
+  for(let r=0;r<gen.n;r++)for(let c=0;c<gen.n;c++){
     let el;
-    if(isWaffleHole(r,c)){
+    if(isWaffleHoleNc(gen.n,gen.axes,r,c)){
       el=document.createElement("div");
       el.className="waffle-cell hole";
       el.setAttribute("aria-hidden","true");
@@ -2480,7 +2618,7 @@ function initWaffleGame(){
     host.appendChild(el);
     waffleCells[r][c]=el;
   }
-  document.getElementById("waffle-msg").textContent="";
+  document.getElementById(waffleMsgElId()).textContent="";
   waffleRender();
 }
 function updateGamePickerUI(){
@@ -2505,10 +2643,14 @@ function applyGameMode(mode,forceInit){
   const changed=mode!==currentGameMode;
   currentGameMode=mode;
   try{localStorage.setItem(GAME_MODE_KEY,mode);}catch(_){}
-  document.getElementById("game-title-btn").textContent=mode==="waffle"?"WAFFLE":"WORDLE";
-  document.title=mode==="waffle"?"Waffle":"Wordle";
+  const isWaff=mode==="waffle"||mode==="waffle-deluxe";
+  document.getElementById("game-title-btn").textContent=isWaff?"WAFFLE":"WORDLE";
+  if(mode==="wordle")document.title="Wordle";
+  else if(mode==="waffle-deluxe")document.title="Waffle Deluxe";
+  else document.title="Waffle";
   document.getElementById("wordle-root").style.display=mode==="wordle"?"flex":"none";
   document.getElementById("waffle-root").style.display=mode==="waffle"?"flex":"none";
+  document.getElementById("waffle-deluxe-root").style.display=mode==="waffle-deluxe"?"flex":"none";
   if(changed||forceInit){
     if(mode==="wordle") initGame();
     else{
@@ -2520,6 +2662,7 @@ function applyGameMode(mode,forceInit){
         document.title="Wordle";
         document.getElementById("wordle-root").style.display="flex";
         document.getElementById("waffle-root").style.display="none";
+        document.getElementById("waffle-deluxe-root").style.display="none";
         document.getElementById("game-container").classList.remove("waffle-mode");
         initGame();
         closeGamePicker();
@@ -2528,7 +2671,7 @@ function applyGameMode(mode,forceInit){
       }
     }
   }
-  document.getElementById("game-container").classList.toggle("waffle-mode",currentGameMode==="waffle");
+  document.getElementById("game-container").classList.toggle("waffle-mode",isWaffleGameMode());
   closeGamePicker();
   updateGamePickerUI();
 }
@@ -2541,9 +2684,11 @@ document.querySelectorAll("#game-picker-list .gp-row[data-game]").forEach(row=>{
   });
 });
 document.getElementById("waffle-new-btn").addEventListener("click",()=>initWaffleGame());
+document.getElementById("waffle-dx-new-btn").addEventListener("click",()=>initWaffleGame());
 
 const _savedGame=localStorage.getItem(GAME_MODE_KEY)||"wordle";
-applyGameMode(_savedGame==="waffle"?"waffle":"wordle",true);
+const _loadMode=_savedGame==="waffle"||_savedGame==="waffle-deluxe"?_savedGame:"wordle";
+applyGameMode(_loadMode,true);
 trySyncPendingGames();
 
 // Auto-prompt for username on load if none stored.
