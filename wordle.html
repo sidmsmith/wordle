@@ -1387,7 +1387,7 @@ const DIFF_DESCS={
 const WAFFLE_DIFF_DESCS={
   easy:"7–8 green (fixed) tiles — more to build on.",
   normal:"6–7 greens — balanced.",
-  hard:"5–6 greens — fewer anchors."
+  hard:"5 greens; yellow hints tuned to 5–6 (hardest)."
 };
 
 function updateWaffleDifficultyButtons(){
@@ -2189,7 +2189,7 @@ function waffleWordLines(){
 function waffleTargetGreenCount(){
   const d=getWaffleDifficulty();
   if(d==="easy")return 7+Math.floor(Math.random()*2);
-  if(d==="hard")return 5+Math.floor(Math.random()*2);
+  if(d==="hard")return 5;
   return 6+Math.floor(Math.random()*2);
 }
 /**
@@ -2301,6 +2301,89 @@ function waffleCellVisualClass(r,c){
   if(rs==="absent"&&cs==="present")return["present"];
   return["present"];
 }
+function waffleRowGuessStatic(grid,r){
+  let s="";
+  for(let c=0;c<5;c++)s+=isWaffleHole(r,c)?"":grid[r][c];
+  return s;
+}
+function waffleColGuessStatic(grid,c){
+  let s="";
+  for(let r=0;r<5;r++)s+=isWaffleHole(r,c)?"":grid[r][c];
+  return s;
+}
+function waffleCellVisualClassStatic(grid,locked,words,r,c){
+  if(isWaffleHole(r,c))return[];
+  if(locked.has(r+","+c))return["locked","correct"];
+  let rs=null,cs=null;
+  if(r===0||r===2||r===4){
+    const tgt=r===0?words.w0:r===2?words.w2:words.w4;
+    const states=getTileState(waffleRowGuessStatic(grid,r),tgt);
+    rs=states[c];
+  }
+  if(c===0||c===2||c===4){
+    const tgt=c===0?words.v0:c===2?words.v1:words.v2;
+    const states=getTileState(waffleColGuessStatic(grid,c),tgt);
+    cs=states[r];
+  }
+  const norm=s=>(s==="correct"?"present":s);
+  rs=rs===null?null:norm(rs);
+  cs=cs===null?null:norm(cs);
+  if(rs===null) return cs==="present"?["present"]:["absent"];
+  if(cs===null) return rs==="present"?["present"]:["absent"];
+  if(rs==="present"&&cs==="present")return["present"];
+  if(rs==="absent"&&cs==="absent")return["absent"];
+  if(rs==="present"&&cs==="absent")return["present"];
+  if(rs==="absent"&&cs==="present")return["present"];
+  return["present"];
+}
+function countWaffleYellowTiles(grid,locked,words){
+  let n=0;
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    if(isWaffleHole(r,c))continue;
+    if(locked.has(r+","+c))continue;
+    if(waffleCellVisualClassStatic(grid,locked,words,r,c).includes("present"))n++;
+  }
+  return n;
+}
+/**
+ * Hard: 5 locks; reshuffle until 5–6 yellow (unlocked) hints, trying several lock sets.
+ */
+function waffleBuildHardStartGrid(gen,playable){
+  const nLock=5;
+  let best=null;
+  let bestPen=1e9;
+  for(let outer=0;outer<40;outer++){
+    const locked=chooseWaffleLockedCells(playable,nLock);
+    const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
+    if(movable.length<8)continue;
+    const letters=movable.map(([r,c])=>gen.sol[r][c]);
+    for(let t=0;t<600;t++){
+      shuffleInPlace(letters);
+      const grid=gen.sol.map(row=>row.slice());
+      movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
+      if(waffleGridMatchesSolution(grid,gen.sol))continue;
+      const y=countWaffleYellowTiles(grid,locked,gen.words);
+      if(y>=5&&y<=6)return{grid,locked};
+      const pen=(y<5?5-y:y>6?y-6:0);
+      if(pen<bestPen){
+        bestPen=pen;
+        best={grid:grid.map(row=>row.slice()),locked};
+      }
+    }
+  }
+  if(best)return best;
+  const locked=chooseWaffleLockedCells(playable,nLock);
+  const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
+  const letters=movable.map(([r,c])=>gen.sol[r][c]);
+  const grid=gen.sol.map(row=>row.slice());
+  let g=0;
+  do{
+    shuffleInPlace(letters);
+    movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
+    g++;
+  }while(waffleGridMatchesSolution(grid,gen.sol)&&g<100);
+  return{grid,locked};
+}
 function waffleGridMatchesSolution(grid,sol){
   for(let r=0;r<5;r++)for(let c=0;c<5;c++){
     if(isWaffleHole(r,c))continue;
@@ -2355,18 +2438,26 @@ function initWaffleGame(){
     return;
   }
   const playable=wafflePlayableCells();
+  const diff=getWaffleDifficulty();
   const nGreen=waffleTargetGreenCount();
-  const locked=chooseWaffleLockedCells(playable,nGreen);
-  const grid=gen.sol.map(row=>row.slice());
-  const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
-  const letters=movable.map(([r,c])=>grid[r][c]);
-  shuffleInPlace(letters);
-  let guard=0;
-  do{
+  let locked=chooseWaffleLockedCells(playable,nGreen);
+  let grid;
+  if(diff==="hard"){
+    const pack=waffleBuildHardStartGrid(gen,playable);
+    grid=pack.grid;
+    locked=pack.locked;
+  }else{
+    grid=gen.sol.map(row=>row.slice());
+    const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
+    const letters=movable.map(([r,c])=>grid[r][c]);
     shuffleInPlace(letters);
-    movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
-    guard++;
-  }while(waffleGridMatchesSolution(grid,gen.sol)&&guard<40);
+    let guard=0;
+    do{
+      shuffleInPlace(letters);
+      movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
+      guard++;
+    }while(waffleGridMatchesSolution(grid,gen.sol)&&guard<40);
+  }
   waffleData={sol:gen.sol,grid,words:gen.words,locked};
   waffleSwapsLeft=15;
   waffleOver=false;
