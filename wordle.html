@@ -90,9 +90,26 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #stats-btn:hover,#stats-btn:active{color:#fff}
 #remaining-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;font-size:clamp(0.85rem,2.3vh,1.1rem);font-weight:700;line-height:1;touch-action:manipulation}
 #remaining-btn:hover,#remaining-btn:active{color:#fff}
+#waffle-dev-solution-btn{display:none;background:none;border:none;color:#92400e;cursor:pointer;padding:4px 6px;align-items:center;justify-content:center;touch-action:manipulation}
+#waffle-dev-solution-btn:hover,#waffle-dev-solution-btn:active{color:#f59e0b}
 #gear-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
 #gear-btn:hover,#gear-btn:active{color:#fff}
 #gear-btn.mp-locked{color:#3a3a3c!important;cursor:not-allowed;opacity:0.4}
+/* REMOVE waffle-dev: dev-only solution peek */
+#waffle-dev-modal{display:none;position:fixed;inset:0;z-index:360;align-items:center;justify-content:center}
+#waffle-dev-modal.open{display:flex}
+#waffle-dev-bd{position:absolute;inset:0;background:rgba(0,0,0,0.88)}
+#waffle-dev-card{position:relative;background:#1a1a1b;border:1px solid #92400e;border-radius:8px;width:min(94vw,420px);max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+#waffle-dev-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #3a3a3c;flex-shrink:0}
+#waffle-dev-hdr span{font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#f59e0b}
+#waffle-dev-x{background:none;border:none;color:#818384;font-size:1rem;cursor:pointer;padding:2px 6px}
+#waffle-dev-x:hover{color:#fff}
+#waffle-dev-body{padding:12px 14px 14px;overflow-y:auto;font-size:0.75rem;color:#e5e7eb;line-height:1.5}
+#waffle-dev-words{font-family:ui-monospace,monospace;white-space:pre-wrap;word-break:break-all;margin:0 0 8px;color:#d1d5db}
+#waffle-dev-grid{display:grid;gap:3px;margin-top:4px}
+.waffle-dev-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(0.55rem,2.5vw,0.75rem);text-transform:uppercase;background:#2a2a2c;border:1px solid #3a3a3c;border-radius:2px;color:#fff}
+.waffle-dev-cell.hole{background:#0d0d0e;border-color:#1a1a1b;color:transparent}
+#waffle-dev-footnote{font-size:0.55rem;color:#565758;margin-top:10px;line-height:1.35}
 #mp-btn.offline{color:#3a3a3c!important;cursor:not-allowed;opacity:0.4;pointer-events:none}
 #game-container.waffle-mode #remaining-btn,
 #game-container.waffle-mode #mp-btn{display:none!important}
@@ -338,6 +355,9 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 </div>
 <button type="button" id="game-title-btn" class="game-title-btn" aria-haspopup="dialog" aria-expanded="false">WORDLE</button>
 <div id="hdr-right">
+<button type="button" id="waffle-dev-solution-btn" aria-label="Dev: show solution" title="Dev: show solution (localhost or ?waffleDev=1)">
+<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+</button>
 <button id="mp-btn" aria-label="Multiplayer">
 <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
 </button>
@@ -415,6 +435,22 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <button type="button" class="gp-row" data-game="waffle" role="menuitem"><span class="gp-name">Waffle</span><span class="gp-check">✓</span></button>
 <button type="button" class="gp-row" data-game="waffle-deluxe" role="menuitem"><span class="gp-name">Waffle Deluxe</span><span class="gp-check">✓</span></button>
 <div class="gp-row disabled" aria-disabled="true"><span class="gp-name">Waffle Numbers</span><span class="gp-tag">Future</span></div>
+</div>
+</div>
+</div>
+
+<!-- REMOVE waffle-dev: dev-only solution modal -->
+<div id="waffle-dev-modal" role="dialog" aria-modal="true" aria-labelledby="waffle-dev-title">
+<div id="waffle-dev-bd"></div>
+<div id="waffle-dev-card">
+<div id="waffle-dev-hdr">
+<span id="waffle-dev-title">Dev — solution</span>
+<button type="button" id="waffle-dev-x" aria-label="Close">✕</button>
+</div>
+<div id="waffle-dev-body">
+<pre id="waffle-dev-words"></pre>
+<div id="waffle-dev-grid"></div>
+<p id="waffle-dev-footnote">Shown only on localhost / 127.0.0.1 or <code>?waffleDev=1</code>. Remove waffle-dev markup and scripts before shipping.</p>
 </div>
 </div>
 </div>
@@ -2641,6 +2677,56 @@ function closeGamePicker(){
   document.getElementById("game-picker-modal").classList.remove("open");
   document.getElementById("game-title-btn").setAttribute("aria-expanded","false");
 }
+/* REMOVE waffle-dev: dev-only solution peek */
+function isWaffleDevSolutionEnabled(){
+  try{
+    const h=location.hostname;
+    if(h==="localhost"||h==="127.0.0.1")return true;
+    return new URLSearchParams(location.search).has("waffleDev");
+  }catch(_){
+    return false;
+  }
+}
+function syncWaffleDevSolutionBtn(){
+  const btn=document.getElementById("waffle-dev-solution-btn");
+  if(!btn)return;
+  btn.style.display=isWaffleDevSolutionEnabled()&&isWaffleGameMode()?"flex":"none";
+}
+function populateWaffleDevSolutionModal(){
+  const wordsEl=document.getElementById("waffle-dev-words");
+  const gridEl=document.getElementById("waffle-dev-grid");
+  if(!wordsEl||!gridEl)return;
+  wordsEl.textContent="";
+  gridEl.innerHTML="";
+  if(!waffleData){
+    wordsEl.textContent="No active puzzle.";
+    return;
+  }
+  const {h0,h1,h2,v0,v1,v2}=waffleData.words;
+  const ax=waffleData.axes;
+  const label=currentGameMode==="waffle-deluxe"?"Waffle Deluxe":"Waffle";
+  wordsEl.textContent=
+    `${label} — word lines (axes ${ax.join(",")})\n\n`+
+    `Rows: ${h0.toUpperCase()}  ${h1.toUpperCase()}  ${h2.toUpperCase()}\n`+
+    `Cols: ${v0.toUpperCase()}  ${v1.toUpperCase()}  ${v2.toUpperCase()}`;
+  const n=waffleData.n;
+  const axes=waffleData.axes;
+  const sol=waffleData.sol;
+  gridEl.style.gridTemplateColumns=`repeat(${n},1fr)`;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    const cell=document.createElement("div");
+    cell.className="waffle-dev-cell"+(isWaffleHoleNc(n,axes,r,c)?" hole":"");
+    if(!isWaffleHoleNc(n,axes,r,c))cell.textContent=sol[r][c].toUpperCase();
+    gridEl.appendChild(cell);
+  }
+}
+function openWaffleDevSolutionModal(){
+  populateWaffleDevSolutionModal();
+  document.getElementById("waffle-dev-modal").classList.add("open");
+}
+function closeWaffleDevSolutionModal(){
+  document.getElementById("waffle-dev-modal").classList.remove("open");
+}
 function applyGameMode(mode,forceInit){
   if(mpRoomId&&mode!=="wordle"){
     showWaffleToast("Finish multiplayer before switching games.");
@@ -2673,6 +2759,7 @@ function applyGameMode(mode,forceInit){
         initGame();
         closeGamePicker();
         updateGamePickerUI();
+        syncWaffleDevSolutionBtn();
         return;
       }
     }
@@ -2680,6 +2767,7 @@ function applyGameMode(mode,forceInit){
   document.getElementById("game-container").classList.toggle("waffle-mode",isWaffleGameMode());
   closeGamePicker();
   updateGamePickerUI();
+  syncWaffleDevSolutionBtn();
 }
 document.getElementById("game-title-btn").addEventListener("click",openGamePicker);
 document.getElementById("game-picker-x").addEventListener("click",closeGamePicker);
@@ -2691,6 +2779,13 @@ document.querySelectorAll("#game-picker-list .gp-row[data-game]").forEach(row=>{
 });
 document.getElementById("waffle-new-btn").addEventListener("click",()=>initWaffleGame());
 document.getElementById("waffle-dx-new-btn").addEventListener("click",()=>initWaffleGame());
+document.getElementById("waffle-dev-solution-btn").addEventListener("click",()=>openWaffleDevSolutionModal());
+document.getElementById("waffle-dev-x").addEventListener("click",()=>closeWaffleDevSolutionModal());
+document.getElementById("waffle-dev-bd").addEventListener("click",()=>closeWaffleDevSolutionModal());
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+  if(document.getElementById("waffle-dev-modal").classList.contains("open")) closeWaffleDevSolutionModal();
+});
 
 const _savedGame=localStorage.getItem(GAME_MODE_KEY)||"wordle";
 const _loadMode=_savedGame==="waffle"||_savedGame==="waffle-deluxe"?_savedGame:"wordle";
