@@ -2388,6 +2388,27 @@ function waffleColGuess(c){
   for(let r=0;r<n;r++)s+=isWaffleHoleNc(n,axes,r,c)?"":waffleData.grid[r][c];
   return s;
 }
+/** Merge row/column Wordle states without squashing "correct" into "present" (fixes row-only cells never turning green). */
+function mergeWaffleLineHints(rs,cs){
+  if(rs===null){
+    if(cs===null)return["absent"];
+    if(cs==="correct")return["correct"];
+    if(cs==="present")return["present"];
+    return["absent"];
+  }
+  if(cs===null){
+    if(rs==="correct")return["correct"];
+    if(rs==="present")return["present"];
+    return["absent"];
+  }
+  if(rs==="correct"&&cs==="correct")return["correct"];
+  if(rs==="absent"&&cs==="absent")return["absent"];
+  if(rs==="present"&&cs==="present")return["present"];
+  if((rs==="correct"&&cs==="present")||(rs==="present"&&cs==="correct"))return["split-rc"];
+  if((rs==="correct"&&cs==="absent")||(rs==="absent"&&cs==="correct"))return["split-ca"];
+  if((rs==="present"&&cs==="absent")||(rs==="absent"&&cs==="present"))return["split-pr"];
+  return["present"];
+}
 function waffleCellVisualClass(r,c){
   const n=waffleData.n,axes=waffleData.axes,L=n;
   if(isWaffleHoleNc(n,axes,r,c))return[];
@@ -2406,16 +2427,7 @@ function waffleCellVisualClass(r,c){
     const states=getTileStateLen(waffleColGuess(c),tgt,L);
     cs=states[r];
   }
-  const norm=s=>(s==="correct"?"present":s);
-  rs=rs===null?null:norm(rs);
-  cs=cs===null?null:norm(cs);
-  if(rs===null) return cs==="present"?["present"]:["absent"];
-  if(cs===null) return rs==="present"?["present"]:["absent"];
-  if(rs==="present"&&cs==="present")return["present"];
-  if(rs==="absent"&&cs==="absent")return["absent"];
-  if(rs==="present"&&cs==="absent")return["present"];
-  if(rs==="absent"&&cs==="present")return["present"];
-  return["present"];
+  return mergeWaffleLineHints(rs,cs);
 }
 function waffleRowGuessStatic(grid,r,n,axes){
   let s="";
@@ -2444,23 +2456,17 @@ function waffleCellVisualClassStatic(grid,locked,words,r,c,n,axes){
     const states=getTileStateLen(waffleColGuessStatic(grid,c,n,axes),tgt,n);
     cs=states[r];
   }
-  const norm=s=>(s==="correct"?"present":s);
-  rs=rs===null?null:norm(rs);
-  cs=cs===null?null:norm(cs);
-  if(rs===null) return cs==="present"?["present"]:["absent"];
-  if(cs===null) return rs==="present"?["present"]:["absent"];
-  if(rs==="present"&&cs==="present")return["present"];
-  if(rs==="absent"&&cs==="absent")return["absent"];
-  if(rs==="present"&&cs==="absent")return["present"];
-  if(rs==="absent"&&cs==="present")return["present"];
-  return["present"];
+  return mergeWaffleLineHints(rs,cs);
+}
+function waffleTileCountsAsYellowHint(classes){
+  return classes.includes("present")||classes.includes("split-rc")||classes.includes("split-pr");
 }
 function countWaffleYellowTiles(grid,locked,words,n,axes){
   let ct=0;
   for(let r=0;r<n;r++)for(let c=0;c<n;c++){
     if(isWaffleHoleNc(n,axes,r,c))continue;
     if(locked.has(r+","+c))continue;
-    if(waffleCellVisualClassStatic(grid,locked,words,r,c,n,axes).includes("present"))ct++;
+    if(waffleTileCountsAsYellowHint(waffleCellVisualClassStatic(grid,locked,words,r,c,n,axes)))ct++;
   }
   return ct;
 }
