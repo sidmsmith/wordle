@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build:words7": "node scripts/build-words7.js",
-    "build:web": "node scripts/build-words7.js && node scripts/prepare-capacitor-web.js",
+    "build:words8": "node scripts/build-words8.js",
+    "build:web": "node scripts/build-words8.js && node scripts/prepare-capacitor-web.js",
     "cap:icons": "node scripts/generate-android-icons.js",
     "cap:sync": "npm run build:web && cap sync android",
     "cap:open": "cap open android"
