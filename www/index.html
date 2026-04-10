@@ -2278,10 +2278,7 @@ function waffleColGuess(c){
 }
 function waffleCellVisualClass(r,c){
   if(isWaffleHole(r,c))return[];
-  const ch=waffleData.grid[r][c];
-  const sol=waffleData.sol[r][c];
   if(waffleData.locked.has(r+","+c))return["locked","correct"];
-  if(ch===sol)return["correct"];
   let rs=null,cs=null;
   if(r===0||r===2||r===4){
     const tgt=r===0?waffleData.words.w0:r===2?waffleData.words.w2:waffleData.words.w4;
@@ -2293,12 +2290,15 @@ function waffleCellVisualClass(r,c){
     const states=getTileState(waffleColGuess(c),tgt);
     cs=states[r];
   }
+  const norm=s=>(s==="correct"?"present":s);
+  rs=rs===null?null:norm(rs);
+  cs=cs===null?null:norm(cs);
   if(rs===null) return cs==="present"?["present"]:["absent"];
   if(cs===null) return rs==="present"?["present"]:["absent"];
   if(rs==="present"&&cs==="present")return["present"];
   if(rs==="absent"&&cs==="absent")return["absent"];
-  if(rs==="present"&&cs==="absent")return["split-pr"];
-  if(rs==="absent"&&cs==="present")return["split-pr"];
+  if(rs==="present"&&cs==="absent")return["present"];
+  if(rs==="absent"&&cs==="present")return["present"];
   return["present"];
 }
 function waffleGridMatchesSolution(grid,sol){
