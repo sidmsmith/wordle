@@ -1,5 +1,6 @@
 /**
  * Reads words7.txt and writes words7.generated.js (only /^[a-z]{7}$/ lines).
+ * Waffle Deluxe needs a large list (~10k+) so random grids can satisfy row/column crosses.
  * Run from wordle/: node scripts/build-words7.js
  */
 import fs from "fs";

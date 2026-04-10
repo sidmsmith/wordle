@@ -2747,15 +2747,12 @@ function applyGameMode(mode,forceInit){
     else{
       initWaffleGame();
       if(!waffleData){
-        currentGameMode="wordle";
-        try{localStorage.setItem(GAME_MODE_KEY,"wordle");}catch(_){}
-        document.getElementById("game-title-btn").textContent="WORDLE";
-        document.title="Wordle";
-        document.getElementById("wordle-root").style.display="flex";
-        document.getElementById("waffle-root").style.display="none";
-        document.getElementById("waffle-deluxe-root").style.display="none";
-        document.getElementById("game-container").classList.remove("waffle-mode");
-        initGame();
+        /* Stay on Waffle / Deluxe so the user can tap New Waffle; do not force Wordle (dict / RNG can fail). */
+        document.getElementById("wordle-root").style.display="none";
+        document.getElementById("waffle-root").style.display=mode==="waffle"?"flex":"none";
+        document.getElementById("waffle-deluxe-root").style.display=mode==="waffle-deluxe"?"flex":"none";
+        document.getElementById("game-container").classList.add("waffle-mode");
+        showWaffleToast("Could not build a puzzle — tap New Waffle to try again.",0);
         closeGamePicker();
         updateGamePickerUI();
         syncWaffleDevSolutionBtn();
