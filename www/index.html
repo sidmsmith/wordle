@@ -2572,7 +2572,6 @@ function renderWaffleNumHoleClue(el,clue){
 }
 let waffleData=null;
 let waffleSwapsLeft=15;
-let waffleOver=false;
 let wafflePick=null;
 let waffleCells=null;
 
@@ -2773,6 +2772,20 @@ function waffleBuildHardStartGrid(gen,playable){
 function waffleSolved(){
   return waffleData?waffleGridMatchesSolution(waffleData.grid,waffleData.sol):false;
 }
+/** Meta line for all Waffle modes: swaps count down past 0 so stats can track “over limit”. */
+function waffleSwapMetaLine(){
+  if(!waffleData)return"";
+  if(waffleSolved())return"Solved!";
+  const n=waffleSwapsLeft;
+  if(n>0)return`${n} swap${n!==1?"s":""} left`;
+  if(n===0)return"0 swaps left";
+  const over=-n;
+  return`${over} swap${over!==1?"s":""} over limit`;
+}
+/** For future stats: swaps after reaching 0 remaining (same as −waffleSwapsLeft when negative). */
+function waffleExtraSwapsUsed(){
+  return waffleData?Math.max(0,-waffleSwapsLeft):0;
+}
 function waffleMetaElId(){
   if(currentGameMode==="waffle-numbers")return"waffle-num-meta";
   return currentGameMode==="waffle-deluxe"?"waffle-dx-meta":"waffle-meta";
@@ -2788,9 +2801,7 @@ function waffleBoardElId(){
 function waffleRender(){
   if(!waffleData||!waffleCells)return;
   const n=waffleData.n,axes=waffleData.axes;
-  document.getElementById(waffleMetaElId()).textContent=waffleOver
-    ?(waffleSolved()?"Solved!":"Out of swaps")
-    :`${waffleSwapsLeft} swap${waffleSwapsLeft!==1?"s":""} left`;
+  document.getElementById(waffleMetaElId()).textContent=waffleSwapMetaLine();
   for(let r=0;r<n;r++)for(let c=0;c<n;c++){
     const el=waffleCells[r][c];
     if(isWaffleHoleNc(n,axes,r,c))continue;
@@ -2803,7 +2814,7 @@ function waffleRender(){
 }
 function waffleOnCellClick(r,c){
   const n=waffleData.n,axes=waffleData.axes;
-  if(waffleOver||isWaffleHoleNc(n,axes,r,c)||waffleData.locked.has(r+","+c))return;
+  if(waffleSolved()||isWaffleHoleNc(n,axes,r,c)||waffleData.locked.has(r+","+c))return;
   if(!wafflePick){wafflePick={r,c};waffleRender();return;}
   if(wafflePick.r===r&&wafflePick.c===c){wafflePick=null;waffleRender();return;}
   if(waffleData.locked.has(wafflePick.r+","+wafflePick.c)){wafflePick=null;return;}
@@ -2814,11 +2825,7 @@ function waffleOnCellClick(r,c){
   waffleSwapsLeft--;
   wafflePick=null;
   if(waffleSolved()){
-    waffleOver=true;
     showWaffleToast("Waffle solved!",0);
-  }else if(waffleSwapsLeft<=0){
-    waffleOver=true;
-    showWaffleToast("No swaps left.",0);
   }
   waffleRender();
 }
@@ -2857,7 +2864,6 @@ function initWaffleGame(){
   }
   waffleData={sol:gen.sol,grid,words:gen.words,locked,n:gen.n,axes:gen.axes};
   waffleSwapsLeft=waffleMaxSwaps();
-  waffleOver=false;
   wafflePick=null;
   const host=document.getElementById(waffleBoardElId());
   host.innerHTML="";
@@ -2920,7 +2926,6 @@ function initWaffleNumbersGame(){
     words:null
   };
   waffleSwapsLeft=waffleMaxSwaps();
-  waffleOver=false;
   wafflePick=null;
   const host=document.getElementById("waffle-num-board");
   host.innerHTML="";
