@@ -84,6 +84,23 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 #waffle-dx-new-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,10px) clamp(20px,5vw,28px);font-size:clamp(0.8rem,2vh,0.95rem);font-weight:600;border-radius:6px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
 #waffle-dx-new-btn:hover{background:#5a9a54}
 #waffle-dx-hint{font-size:0.58rem;color:#565758;text-align:center;max-width:480px;padding:0 10px;line-height:1.35}
+#waffle-num-root{display:none;flex-direction:column;align-items:center;width:100%;flex:1;min-height:0;overflow:hidden;gap:clamp(4px,1vh,8px)}
+#waffle-num-board{display:grid;grid-template-columns:repeat(7,1fr);gap:clamp(2px,0.6vw,4px);width:100%;max-width:min(490px,92vw);flex-shrink:0}
+#waffle-num-meta{font-size:clamp(0.75rem,2vh,0.95rem);font-weight:700;color:#9ca3af;letter-spacing:0.06em}
+#waffle-num-msg{min-height:clamp(28px,3.5vh,36px);text-align:center;font-size:clamp(0.8rem,2.2vh,1rem);font-weight:600;color:#fff;flex-shrink:0;padding:0 8px}
+#waffle-num-new-btn{background:#6aaa64;color:#fff;border:none;padding:clamp(8px,2vh,10px) clamp(20px,5vw,28px);font-size:clamp(0.8rem,2vh,0.95rem);font-weight:600;border-radius:6px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
+#waffle-num-new-btn:hover{background:#5a9a54}
+#waffle-num-hint{font-size:0.58rem;color:#565758;text-align:center;max-width:480px;padding:0 10px;line-height:1.35}
+.waffle-cell.waffle-num-digit{font-variant-numeric:tabular-nums;text-transform:none;font-weight:800}
+.waffle-cell.num-wrong{background:#d8d8da;color:#121213;border-color:#b8b8b8}
+.waffle-cell.hole.waffle-num-hole-wrap{padding:2px;background:#0d0d0e;border:none;display:flex;align-items:center;justify-content:center;overflow:visible}
+.waffle-num-clue{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:clamp(28px,7vw,40px)}
+.waffle-num-clue-badge{background:#4a4a4d;color:#fff;font-size:clamp(0.65rem,2.4vw,0.85rem);font-weight:800;border-radius:50%;width:clamp(26px,8vw,34px);height:clamp(26px,8vw,34px);display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,0.45)}
+.waffle-num-clue-pointer{position:absolute;width:0;height:0;border-style:solid}
+.waffle-num-clue-pointer--r{right:clamp(-2px,-0.5vw,-1px);top:50%;transform:translateY(-50%);border-width:6px 0 6px 9px;border-color:transparent transparent transparent #4a4a4d}
+.waffle-num-clue-pointer--l{left:clamp(-2px,-0.5vw,-1px);top:50%;transform:translateY(-50%);border-width:6px 9px 6px 0;border-color:transparent #4a4a4d transparent transparent}
+.waffle-num-clue-pointer--u{top:clamp(-2px,-0.5vw,-1px);left:50%;transform:translateX(-50%);border-width:0 6px 9px 6px;border-color:transparent transparent #4a4a4d transparent}
+.waffle-num-clue-pointer--d{bottom:clamp(-2px,-0.5vw,-1px);left:50%;transform:translateX(-50%);border-width:9px 6px 0 6px;border-color:#4a4a4d transparent transparent transparent}
 /* ── Header bar ───────────────────────────────────────────── */
 #header{position:relative;display:flex;align-items:center;justify-content:center;width:100%;flex-shrink:0}
 #stats-btn{background:none;border:none;color:#818384;cursor:pointer;padding:4px 6px;display:flex;align-items:center;touch-action:manipulation}
@@ -421,6 +438,13 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <p id="waffle-dx-hint">Tap two tiles to swap. Green tiles are fixed. Solve all eight words within 25 swaps.</p>
 <button type="button" id="waffle-dx-new-btn">New Waffle</button>
 </div>
+<div id="waffle-num-root">
+<div id="waffle-num-board"></div>
+<div id="waffle-num-meta"></div>
+<div id="waffle-num-msg"></div>
+<p id="waffle-num-hint">Tap two tiles to swap. Green means the digit is correct for that cell. Row/column lines use 1–7 once each. Sum clues point along a row/column ray through playable cells.</p>
+<button type="button" id="waffle-num-new-btn">New Waffle</button>
+</div>
 </div>
 
 <div id="game-picker-modal" role="dialog" aria-modal="true" aria-labelledby="game-picker-title">
@@ -434,7 +458,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <button type="button" class="gp-row" data-game="wordle" role="menuitem"><span class="gp-name">Wordle</span><span class="gp-check">✓</span></button>
 <button type="button" class="gp-row" data-game="waffle" role="menuitem"><span class="gp-name">Waffle</span><span class="gp-check">✓</span></button>
 <button type="button" class="gp-row" data-game="waffle-deluxe" role="menuitem"><span class="gp-name">Waffle Deluxe</span><span class="gp-check">✓</span></button>
-<div class="gp-row disabled" aria-disabled="true"><span class="gp-name">Waffle Numbers</span><span class="gp-tag">Future</span></div>
+<button type="button" class="gp-row" data-game="waffle-numbers" role="menuitem"><span class="gp-name">Waffle Numbers</span><span class="gp-check">✓</span></button>
 </div>
 </div>
 </div>
@@ -671,7 +695,7 @@ const MAX_SYNC_RETRY_MS=60000;
 const GAME_MODE_KEY="wordle_app_game";
 let currentGameMode="wordle";
 function isWaffleGameMode(){
-  return currentGameMode==="waffle"||currentGameMode==="waffle-deluxe";
+  return currentGameMode==="waffle"||currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers";
 }
 const WAFFLE_DIFF_KEY="waffle_difficulty";
 
@@ -1472,7 +1496,7 @@ const DIFF_DESCS={
   superhard:"Hard Mode + avoid gray letters & fix yellow positions"
 };
 function waffleDiffDescs(){
-  if(currentGameMode==="waffle-deluxe"){
+  if(currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers"){
     return{
       easy:"9–10 green (fixed) tiles — more to build on.",
       normal:"8–9 greens — balanced.",
@@ -2262,11 +2286,11 @@ document.getElementById("mp-win-close").addEventListener("click",()=>{
 
 // ── Game picker + Waffle (5×5) & Waffle Deluxe (7×7, 4+4 words) ───────────
 function waffleSize(){
-  return currentGameMode==="waffle-deluxe"?7:5;
+  return currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers"?7:5;
 }
 /** Row/col indices that hold answer words (same for rows and columns). */
 function waffleAxes(){
-  return currentGameMode==="waffle-deluxe"?[0,2,4,6]:[0,2,4];
+  return currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers"?[0,2,4,6]:[0,2,4];
 }
 function isWaffleHoleNc(n,axes,r,c){
   return !axes.includes(r)&&!axes.includes(c);
@@ -2297,7 +2321,7 @@ function waffleWordLines(){
 }
 function waffleTargetGreenCount(){
   const d=getWaffleDifficulty();
-  if(currentGameMode==="waffle-deluxe"){
+  if(currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers"){
     if(d==="easy")return 9+Math.floor(Math.random()*2);
     if(d==="hard")return 7;
     return 8+Math.floor(Math.random()*2);
@@ -2307,12 +2331,13 @@ function waffleTargetGreenCount(){
   return 6+Math.floor(Math.random()*2);
 }
 function waffleHardBuildParams(){
-  if(currentGameMode==="waffle-deluxe"){
+  if(currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers"){
     return{nLock:8,yMin:8,yMax:10,minMovable:15};
   }
   return{nLock:5,yMin:5,yMax:6,minMovable:8};
 }
 function waffleMaxSwaps(){
+  if(currentGameMode==="waffle-numbers")return 20;
   return currentGameMode==="waffle-deluxe"?25:15;
 }
 /**
@@ -2363,7 +2388,26 @@ function tryGenerateWaffleSolution(){
   const k=axes.length;
   const dict=n===5?WORDS:(typeof WORDS7!=="undefined"&&WORDS7&&WORDS7.length?WORDS7:[]);
   if(!dict.length)return null;
-  const pick=()=>dict[Math.floor(Math.random()*dict.length)];
+  /** Waffle Deluxe: prefer words from words7.txt; supplement still allowed when needed. */
+  const deluxePrimaryBias=n===7&&typeof WORDS7_PRIMARY!=="undefined"&&WORDS7_PRIMARY&&WORDS7_PRIMARY.length>0;
+  const primarySet=deluxePrimaryBias?new Set(WORDS7_PRIMARY):null;
+  const rowPrimaryChance=0.72;
+  function pickRowWord(){
+    if(primarySet&&Math.random()<rowPrimaryChance){
+      return WORDS7_PRIMARY[Math.floor(Math.random()*WORDS7_PRIMARY.length)];
+    }
+    return dict[Math.floor(Math.random()*dict.length)];
+  }
+  function pickVerticalRandom(vopts){
+    if(!primarySet||!vopts.length)return vopts[Math.floor(Math.random()*vopts.length)];
+    const preferred=[];
+    for(let i=0;i<vopts.length;i++){
+      if(primarySet.has(vopts[i]))preferred.push(vopts[i]);
+    }
+    const pool=preferred.length?preferred:vopts;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+  const pick=n===5?()=>dict[Math.floor(Math.random()*dict.length)]:pickRowWord;
   const maxT=k===4?20000:2500;
   for(let t=0;t<maxT;t++){
     const h=[];
@@ -2378,7 +2422,7 @@ function tryGenerateWaffleSolution(){
         return true;
       });
       if(!vopts.length){skip=true;break;}
-      v.push(vopts[Math.floor(Math.random()*vopts.length)]);
+      v.push(pickVerticalRandom(vopts));
     }
     if(skip)continue;
     const sol=Array.from({length:n},()=>Array(n).fill(""));
@@ -2408,6 +2452,102 @@ function shuffleInPlace(arr){
     const j=Math.floor(Math.random()*(i+1));
     [arr[i],arr[j]]=[arr[j],arr[i]];
   }
+}
+/** Ray direction from each hole (dr,dc); sums include all playable cells along that ray. */
+const WAFFLE_NUM_RAY_DIRS={
+  "1,1":[0,1],"1,3":[0,-1],"1,5":[-1,0],"3,1":[0,1],"3,3":[0,-1],"3,5":[1,0],
+  "5,1":[0,1],"5,3":[0,1],"5,5":[1,0]
+};
+function waffleNumShuffleDigits(){
+  const a=[1,2,3,4,5,6,7];
+  shuffleInPlace(a);
+  return a;
+}
+function waffleNumFillGridSol(){
+  const n=7;
+  const axes=[0,2,4,6];
+  const playable=[];
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    if(!isWaffleHoleNc(n,axes,r,c))playable.push([r,c]);
+  }
+  const rowOcc={};
+  const colOcc={};
+  for(const r of axes)rowOcc[r]=new Set();
+  for(const c of axes)colOcc[c]=new Set();
+  const sol=Array.from({length:n},()=>Array(n).fill(""));
+  function dfs(idx,p){
+    if(idx===p.length)return true;
+    const [r,c]=p[idx];
+    for(const d of waffleNumShuffleDigits()){
+      if(axes.includes(r)&&rowOcc[r].has(d))continue;
+      if(axes.includes(c)&&colOcc[c].has(d))continue;
+      sol[r][c]=String(d);
+      if(axes.includes(r))rowOcc[r].add(d);
+      if(axes.includes(c))colOcc[c].add(d);
+      if(dfs(idx+1,p))return true;
+      if(axes.includes(r))rowOcc[r].delete(d);
+      if(axes.includes(c))colOcc[c].delete(d);
+      sol[r][c]="";
+    }
+    return false;
+  }
+  for(let attempt=0;attempt<200;attempt++){
+    shuffleInPlace(playable);
+    for(const r of axes)rowOcc[r].clear();
+    for(const c of axes)colOcc[c].clear();
+    for(let i=0;i<playable.length;i++){
+      const [r,c]=playable[i];
+      sol[r][c]="";
+    }
+    if(dfs(0,playable))return{sol,n,axes};
+  }
+  return null;
+}
+function waffleNumRaySum(sol,n,axes,hr,hc,dr,dc){
+  let r=hr+dr,c=hc+dc,sum=0;
+  while(r>=0&&r<n&&c>=0&&c<n){
+    if(!isWaffleHoleNc(n,axes,r,c))sum+=parseInt(sol[r][c],10);
+    r+=dr;c+=dc;
+  }
+  return sum;
+}
+function waffleNumHoleClues(sol,n,axes){
+  const clues={};
+  for(const key of Object.keys(WAFFLE_NUM_RAY_DIRS)){
+    const [hr,hc]=key.split(",").map(Number);
+    const [dr,dc]=WAFFLE_NUM_RAY_DIRS[key];
+    const sum=waffleNumRaySum(sol,n,axes,hr,hc,dr,dc);
+    let dir="r";
+    if(dr===0&&dc===-1)dir="l";
+    else if(dr===0&&dc===1)dir="r";
+    else if(dr===-1&&dc===0)dir="u";
+    else if(dr===1&&dc===0)dir="d";
+    clues[key]={sum,dir};
+  }
+  return clues;
+}
+function tryGenerateWaffleNumbersSolution(){
+  const pack=waffleNumFillGridSol();
+  if(!pack)return null;
+  const {sol,n,axes}=pack;
+  const holeClues=waffleNumHoleClues(sol,n,axes);
+  return{sol,n,axes,holeClues};
+}
+function renderWaffleNumHoleClue(el,sum,dir){
+  el.innerHTML="";
+  el.className="waffle-cell hole waffle-num-hole-wrap";
+  el.setAttribute("aria-hidden","false");
+  el.setAttribute("aria-label",`Sum clue ${sum}`);
+  const wrap=document.createElement("div");
+  wrap.className="waffle-num-clue";
+  const badge=document.createElement("div");
+  badge.className="waffle-num-clue-badge";
+  badge.textContent=String(sum);
+  const ptr=document.createElement("div");
+  ptr.className="waffle-num-clue-pointer waffle-num-clue-pointer--"+dir;
+  wrap.appendChild(badge);
+  wrap.appendChild(ptr);
+  el.appendChild(wrap);
 }
 let waffleData=null;
 let waffleSwapsLeft=15;
@@ -2451,6 +2591,10 @@ function mergeWaffleLineHints(rs,cs){
 function waffleCellVisualClass(r,c){
   const n=waffleData.n,axes=waffleData.axes,L=n;
   if(isWaffleHoleNc(n,axes,r,c))return[];
+  if(waffleData.isNumbers){
+    if(waffleData.locked.has(r+","+c))return["locked","correct"];
+    return waffleData.grid[r][c]===waffleData.sol[r][c]?["correct"]:["num-wrong"];
+  }
   if(waffleData.locked.has(r+","+c))return["locked","correct"];
   const {h,v}=waffleData.words;
   let rs=null,cs=null;
@@ -2504,6 +2648,52 @@ function countWaffleYellowTiles(grid,locked,words,n,axes){
     if(waffleTileCountsAsYellowHint(waffleCellVisualClassStatic(grid,locked,words,r,c,n,axes)))ct++;
   }
   return ct;
+}
+function countWaffleNumMismatches(grid,locked,sol,n,axes){
+  let ct=0;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    if(isWaffleHoleNc(n,axes,r,c))continue;
+    if(locked.has(r+","+c))continue;
+    if(grid[r][c]!==sol[r][c])ct++;
+  }
+  return ct;
+}
+function waffleBuildHardStartGridNumbers(gen,playable){
+  const{nLock,yMin,yMax,minMovable}=waffleHardBuildParams();
+  const n=gen.n,axes=gen.axes;
+  let best=null;
+  let bestPen=1e9;
+  for(let outer=0;outer<40;outer++){
+    const locked=chooseWaffleLockedCells(playable,nLock);
+    const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
+    if(movable.length<minMovable)continue;
+    const letters=movable.map(([r,c])=>gen.sol[r][c]);
+    for(let t=0;t<600;t++){
+      shuffleInPlace(letters);
+      const grid=gen.sol.map(row=>row.slice());
+      movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
+      if(waffleGridMatchesSolutionGen(grid,gen.sol,gen))continue;
+      const y=countWaffleNumMismatches(grid,locked,gen.sol,n,axes);
+      if(y>=yMin&&y<=yMax)return{grid,locked};
+      const pen=(y<yMin?yMin-y:y>yMax?y-yMax:0);
+      if(pen<bestPen){
+        bestPen=pen;
+        best={grid:grid.map(row=>row.slice()),locked};
+      }
+    }
+  }
+  if(best)return best;
+  const locked=chooseWaffleLockedCells(playable,nLock);
+  const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
+  const letters=movable.map(([r,c])=>gen.sol[r][c]);
+  const grid=gen.sol.map(row=>row.slice());
+  let g=0;
+  do{
+    shuffleInPlace(letters);
+    movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
+    g++;
+  }while(waffleGridMatchesSolutionGen(grid,gen.sol,gen)&&g<100);
+  return{grid,locked};
 }
 function waffleGridMatchesSolution(grid,sol){
   if(!waffleData)return false;
@@ -2563,12 +2753,15 @@ function waffleSolved(){
   return waffleData?waffleGridMatchesSolution(waffleData.grid,waffleData.sol):false;
 }
 function waffleMetaElId(){
+  if(currentGameMode==="waffle-numbers")return"waffle-num-meta";
   return currentGameMode==="waffle-deluxe"?"waffle-dx-meta":"waffle-meta";
 }
 function waffleMsgElId(){
+  if(currentGameMode==="waffle-numbers")return"waffle-num-msg";
   return currentGameMode==="waffle-deluxe"?"waffle-dx-msg":"waffle-msg";
 }
 function waffleBoardElId(){
+  if(currentGameMode==="waffle-numbers")return"waffle-num-board";
   return currentGameMode==="waffle-deluxe"?"waffle-dx-board":"waffle-board";
 }
 function waffleRender(){
@@ -2580,8 +2773,8 @@ function waffleRender(){
   for(let r=0;r<n;r++)for(let c=0;c<n;c++){
     const el=waffleCells[r][c];
     if(isWaffleHoleNc(n,axes,r,c))continue;
-    el.textContent=waffleData.grid[r][c].toUpperCase();
-    el.className="waffle-cell";
+    el.textContent=waffleData.isNumbers?waffleData.grid[r][c]:waffleData.grid[r][c].toUpperCase();
+    el.className=waffleData.isNumbers?"waffle-cell waffle-num-digit":"waffle-cell";
     if(waffleData.locked.has(r+","+c))el.classList.add("locked");
     waffleCellVisualClass(r,c).forEach(cl=>el.classList.add(cl));
     el.classList.toggle("selected",wafflePick&&wafflePick.r===r&&wafflePick.c===c);
@@ -2609,6 +2802,10 @@ function waffleOnCellClick(r,c){
   waffleRender();
 }
 function initWaffleGame(){
+  if(currentGameMode==="waffle-numbers"){
+    initWaffleNumbersGame();
+    return;
+  }
   waffleData=null;
   waffleCells=null;
   const gen=tryGenerateWaffleSolution();
@@ -2662,6 +2859,75 @@ function initWaffleGame(){
   document.getElementById(waffleMsgElId()).textContent="";
   waffleRender();
 }
+function initWaffleNumbersGame(){
+  waffleData=null;
+  waffleCells=null;
+  const gen=tryGenerateWaffleNumbersSolution();
+  if(!gen){
+    showWaffleToast("Could not build a puzzle — try again.");
+    return;
+  }
+  const playable=wafflePlayableCells();
+  const diff=getWaffleDifficulty();
+  const nGreen=waffleTargetGreenCount();
+  let locked=chooseWaffleLockedCells(playable,nGreen);
+  let grid;
+  if(diff==="hard"){
+    const pack=waffleBuildHardStartGridNumbers(gen,playable);
+    grid=pack.grid;
+    locked=pack.locked;
+  }else{
+    grid=gen.sol.map(row=>row.slice());
+    const movable=playable.filter(([r,c])=>!locked.has(r+","+c));
+    const letters=movable.map(([r,c])=>grid[r][c]);
+    shuffleInPlace(letters);
+    let guard=0;
+    do{
+      shuffleInPlace(letters);
+      movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
+      guard++;
+    }while(waffleGridMatchesSolutionGen(grid,gen.sol,gen)&&guard<40);
+  }
+  waffleData={
+    isNumbers:true,
+    sol:gen.sol,
+    grid,
+    locked,
+    n:gen.n,
+    axes:gen.axes,
+    holeClues:gen.holeClues,
+    words:null
+  };
+  waffleSwapsLeft=waffleMaxSwaps();
+  waffleOver=false;
+  wafflePick=null;
+  const host=document.getElementById("waffle-num-board");
+  host.innerHTML="";
+  waffleCells=Array.from({length:gen.n},()=>Array(gen.n).fill(null));
+  for(let r=0;r<gen.n;r++)for(let c=0;c<gen.n;c++){
+    if(isWaffleHoleNc(gen.n,gen.axes,r,c)){
+      const el=document.createElement("div");
+      const key=r+","+c;
+      const clue=gen.holeClues[key];
+      if(clue)renderWaffleNumHoleClue(el,clue.sum,clue.dir);
+      else{
+        el.className="waffle-cell hole";
+        el.setAttribute("aria-hidden","true");
+      }
+      host.appendChild(el);
+      waffleCells[r][c]=el;
+    }else{
+      const el=document.createElement("button");
+      el.type="button";
+      el.className="waffle-cell waffle-num-digit";
+      el.addEventListener("click",()=>waffleOnCellClick(r,c));
+      host.appendChild(el);
+      waffleCells[r][c]=el;
+    }
+  }
+  document.getElementById("waffle-num-msg").textContent="";
+  waffleRender();
+}
 function updateGamePickerUI(){
   document.querySelectorAll("#game-picker-list .gp-row[data-game]").forEach(row=>{
     row.classList.toggle("current",row.dataset.game===currentGameMode);
@@ -2701,8 +2967,22 @@ function populateWaffleDevSolutionModal(){
     wordsEl.textContent="No active puzzle.";
     return;
   }
-  const {h,v}=waffleData.words;
   const ax=waffleData.axes;
+  if(waffleData.isNumbers){
+    wordsEl.textContent=`Waffle Numbers — solution digits (axes ${ax.join(",")}).`;
+    const n=waffleData.n;
+    const axes=waffleData.axes;
+    const sol=waffleData.sol;
+    gridEl.style.gridTemplateColumns=`repeat(${n},1fr)`;
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+      const cell=document.createElement("div");
+      cell.className="waffle-dev-cell"+(isWaffleHoleNc(n,axes,r,c)?" hole":"");
+      if(!isWaffleHoleNc(n,axes,r,c))cell.textContent=sol[r][c];
+      gridEl.appendChild(cell);
+    }
+    return;
+  }
+  const {h,v}=waffleData.words;
   const label=currentGameMode==="waffle-deluxe"?"Waffle Deluxe":"Waffle";
   wordsEl.textContent=
     `${label} — word lines (axes ${ax.join(",")})\n\n`+
@@ -2734,7 +3014,7 @@ function applyGameMode(mode,forceInit){
   const changed=mode!==currentGameMode;
   currentGameMode=mode;
   try{localStorage.setItem(GAME_MODE_KEY,mode);}catch(_){}
-  const isWaff=mode==="waffle"||mode==="waffle-deluxe";
+  const isWaff=mode==="waffle"||mode==="waffle-deluxe"||mode==="waffle-numbers";
   document.getElementById("game-title-btn").textContent=isWaff?"WAFFLE":"WORDLE";
   if(mode==="wordle")document.title="Wordle";
   else if(mode==="waffle-deluxe")document.title="Waffle Deluxe";
@@ -2742,6 +3022,7 @@ function applyGameMode(mode,forceInit){
   document.getElementById("wordle-root").style.display=mode==="wordle"?"flex":"none";
   document.getElementById("waffle-root").style.display=mode==="waffle"?"flex":"none";
   document.getElementById("waffle-deluxe-root").style.display=mode==="waffle-deluxe"?"flex":"none";
+  document.getElementById("waffle-num-root").style.display=mode==="waffle-numbers"?"flex":"none";
   if(changed||forceInit){
     if(mode==="wordle") initGame();
     else{
@@ -2751,6 +3032,7 @@ function applyGameMode(mode,forceInit){
         document.getElementById("wordle-root").style.display="none";
         document.getElementById("waffle-root").style.display=mode==="waffle"?"flex":"none";
         document.getElementById("waffle-deluxe-root").style.display=mode==="waffle-deluxe"?"flex":"none";
+        document.getElementById("waffle-num-root").style.display=mode==="waffle-numbers"?"flex":"none";
         document.getElementById("game-container").classList.add("waffle-mode");
         showWaffleToast("Could not build a puzzle — tap New Waffle to try again.",0);
         closeGamePicker();
@@ -2775,6 +3057,7 @@ document.querySelectorAll("#game-picker-list .gp-row[data-game]").forEach(row=>{
 });
 document.getElementById("waffle-new-btn").addEventListener("click",()=>initWaffleGame());
 document.getElementById("waffle-dx-new-btn").addEventListener("click",()=>initWaffleGame());
+document.getElementById("waffle-num-new-btn").addEventListener("click",()=>initWaffleGame());
 document.getElementById("waffle-dev-solution-btn").addEventListener("click",()=>openWaffleDevSolutionModal());
 document.getElementById("waffle-dev-x").addEventListener("click",()=>closeWaffleDevSolutionModal());
 document.getElementById("waffle-dev-bd").addEventListener("click",()=>closeWaffleDevSolutionModal());
@@ -2784,7 +3067,7 @@ document.addEventListener("keydown",e=>{
 });
 
 const _savedGame=localStorage.getItem(GAME_MODE_KEY)||"wordle";
-const _loadMode=_savedGame==="waffle"||_savedGame==="waffle-deluxe"?_savedGame:"wordle";
+const _loadMode=["waffle","waffle-deluxe","waffle-numbers"].includes(_savedGame)?_savedGame:"wordle";
 applyGameMode(_loadMode,true);
 trySyncPendingGames();
 

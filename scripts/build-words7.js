@@ -9,6 +9,10 @@
  *
  * Run: node scripts/build-words7.js
  * Stress-test primary only: node scripts/test-deluxe-primary-only.js
+ *
+ * Also emits WORDS7_PRIMARY (sorted unique words from words7.txt only) so the
+ * client can bias Waffle Deluxe toward common words while keeping the full
+ * merged WORDS7 for crosses.
  */
 import fs from "fs";
 import path from "path";
@@ -20,7 +24,7 @@ const out = path.join(root, "words7.generated.js");
 
 if (!fs.existsSync(primaryPath)) {
   console.warn("words7.txt not found; writing empty WORDS7.");
-  fs.writeFileSync(out, "var WORDS7=[];\n", "utf8");
+  fs.writeFileSync(out, "var WORDS7=[];\nvar WORDS7_PRIMARY=[];\n", "utf8");
   process.exit(0);
 }
 
@@ -40,8 +44,14 @@ const set = new Set(primaryList);
 for (const w of readSevenLetterFile(supplementPath)) set.add(w);
 
 const words = [...set].sort();
+const primaryUnique = [...new Set(primaryList)].sort();
 const json = JSON.stringify(words);
-fs.writeFileSync(out, `var WORDS7=${json};\n`, "utf8");
+const primaryJson = JSON.stringify(primaryUnique);
+fs.writeFileSync(
+  out,
+  `var WORDS7=${json};\nvar WORDS7_PRIMARY=${primaryJson};\n`,
+  "utf8"
+);
 console.log(
-  `words7.generated.js: ${words.length} seven-letter words (${primaryList.length} primary lines + supplement)`
+  `words7.generated.js: ${words.length} seven-letter words (${primaryUnique.length} primary + supplement); WORDS7_PRIMARY=${primaryUnique.length}`
 );
