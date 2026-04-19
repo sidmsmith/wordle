@@ -95,7 +95,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 .waffle-cell.num-wrong{background:#d8d8da;color:#121213;border-color:#b8b8b8}
 .waffle-cell.hole.waffle-num-hole-wrap{padding:2px;background:#0d0d0e;border:none;display:flex;align-items:center;justify-content:center;overflow:visible}
 .waffle-num-clue{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:clamp(28px,7vw,40px)}
-.waffle-num-clue-badge{background:#4a4a4d;color:#fff;font-size:clamp(0.65rem,2.4vw,0.85rem);font-weight:800;border-radius:50%;width:clamp(26px,8vw,34px);height:clamp(26px,8vw,34px);display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,0.45)}
+.waffle-num-clue-badge{background:#4a4a4d;color:#fff;font-size:clamp(0.52rem,2vw,0.72rem);font-weight:800;border-radius:50%;min-width:clamp(26px,8vw,34px);height:clamp(26px,8vw,34px);padding:0 3px;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,0.45)}
 .waffle-num-clue-pointer{position:absolute;width:0;height:0;border-style:solid}
 .waffle-num-clue-pointer--r{right:clamp(-2px,-0.5vw,-1px);top:50%;transform:translateY(-50%);border-width:6px 0 6px 9px;border-color:transparent transparent transparent #4a4a4d}
 .waffle-num-clue-pointer--l{left:clamp(-2px,-0.5vw,-1px);top:50%;transform:translateY(-50%);border-width:6px 9px 6px 0;border-color:transparent #4a4a4d transparent transparent}
@@ -442,7 +442,7 @@ h1{font-size:clamp(1.5rem,5vh,2.5rem);font-weight:700;letter-spacing:0.2em;margi
 <div id="waffle-num-board"></div>
 <div id="waffle-num-meta"></div>
 <div id="waffle-num-msg"></div>
-<p id="waffle-num-hint">Tap two tiles to swap. Green means the digit is correct for that cell. Row/column lines use 1–7 once each. Sum clues point along a row/column ray through playable cells.</p>
+<p id="waffle-num-hint">Tap two tiles to swap. Green means the digit is correct for that cell. Row/column lines use 1–7 once each. Each sum clue has two arrows; the number is the sum of the digits in the first playable cell along each arrow (max 14).</p>
 <button type="button" id="waffle-num-new-btn">New Waffle</button>
 </div>
 </div>
@@ -2453,11 +2453,25 @@ function shuffleInPlace(arr){
     [arr[i],arr[j]]=[arr[j],arr[i]];
   }
 }
-/** Ray direction from each hole (dr,dc); sums include all playable cells along that ray. */
-const WAFFLE_NUM_RAY_DIRS={
-  "1,1":[0,1],"1,3":[0,-1],"1,5":[-1,0],"3,1":[0,1],"3,3":[0,-1],"3,5":[1,0],
-  "5,1":[0,1],"5,3":[0,1],"5,5":[1,0]
+/** Two arrows per hole: unit vectors [dr,dc]; each arrow sums exactly one digit (first playable cell along that ray). Total clue = both digits (2–14). */
+const WAFFLE_NUM_CLUE_ARROWS={
+  "1,1":[[0,1],[1,0]],
+  "1,3":[[0,-1],[1,0]],
+  "1,5":[[0,-1],[-1,0]],
+  "3,1":[[0,1],[1,0]],
+  "3,3":[[0,-1],[0,1]],
+  "3,5":[[0,-1],[1,0]],
+  "5,1":[[0,1],[1,0]],
+  "5,3":[[0,-1],[0,1]],
+  "5,5":[[0,-1],[-1,0]]
 };
+function waffleNumVecToDir(dr,dc){
+  if(dr===0&&dc===1)return"r";
+  if(dr===0&&dc===-1)return"l";
+  if(dr===-1&&dc===0)return"u";
+  if(dr===1&&dc===0)return"d";
+  return"r";
+}
 function waffleNumShuffleDigits(){
   const a=[1,2,3,4,5,6,7];
   shuffleInPlace(a);
@@ -2503,26 +2517,28 @@ function waffleNumFillGridSol(){
   }
   return null;
 }
-function waffleNumRaySum(sol,n,axes,hr,hc,dr,dc){
-  let r=hr+dr,c=hc+dc,sum=0;
+/** First playable digit along ray from hole (skip hole cells). */
+function waffleNumFirstPlayableDigit(sol,n,axes,hr,hc,dr,dc){
+  let r=hr+dr,c=hc+dc;
   while(r>=0&&r<n&&c>=0&&c<n){
-    if(!isWaffleHoleNc(n,axes,r,c))sum+=parseInt(sol[r][c],10);
+    if(!isWaffleHoleNc(n,axes,r,c))return parseInt(sol[r][c],10);
     r+=dr;c+=dc;
   }
-  return sum;
+  return null;
 }
 function waffleNumHoleClues(sol,n,axes){
   const clues={};
-  for(const key of Object.keys(WAFFLE_NUM_RAY_DIRS)){
+  for(const key of Object.keys(WAFFLE_NUM_CLUE_ARROWS)){
     const [hr,hc]=key.split(",").map(Number);
-    const [dr,dc]=WAFFLE_NUM_RAY_DIRS[key];
-    const sum=waffleNumRaySum(sol,n,axes,hr,hc,dr,dc);
-    let dir="r";
-    if(dr===0&&dc===-1)dir="l";
-    else if(dr===0&&dc===1)dir="r";
-    else if(dr===-1&&dc===0)dir="u";
-    else if(dr===1&&dc===0)dir="d";
-    clues[key]={sum,dir};
+    const [rayA,rayB]=WAFFLE_NUM_CLUE_ARROWS[key];
+    const a=waffleNumFirstPlayableDigit(sol,n,axes,hr,hc,rayA[0],rayA[1]);
+    const b=waffleNumFirstPlayableDigit(sol,n,axes,hr,hc,rayB[0],rayB[1]);
+    if(a===null||b===null)return null;
+    clues[key]={
+      sum:a+b,
+      dirA:waffleNumVecToDir(rayA[0],rayA[1]),
+      dirB:waffleNumVecToDir(rayB[0],rayB[1])
+    };
   }
   return clues;
 }
@@ -2531,22 +2547,27 @@ function tryGenerateWaffleNumbersSolution(){
   if(!pack)return null;
   const {sol,n,axes}=pack;
   const holeClues=waffleNumHoleClues(sol,n,axes);
+  if(!holeClues)return null;
   return{sol,n,axes,holeClues};
 }
-function renderWaffleNumHoleClue(el,sum,dir){
+function renderWaffleNumHoleClue(el,clue){
   el.innerHTML="";
   el.className="waffle-cell hole waffle-num-hole-wrap";
   el.setAttribute("aria-hidden","false");
-  el.setAttribute("aria-label",`Sum clue ${sum}`);
+  const sum=clue.sum,dirA=clue.dirA,dirB=clue.dirB;
+  el.setAttribute("aria-label",`Sum clue ${sum}, two arrows`);
   const wrap=document.createElement("div");
   wrap.className="waffle-num-clue";
   const badge=document.createElement("div");
   badge.className="waffle-num-clue-badge";
   badge.textContent=String(sum);
-  const ptr=document.createElement("div");
-  ptr.className="waffle-num-clue-pointer waffle-num-clue-pointer--"+dir;
+  const p1=document.createElement("div");
+  p1.className="waffle-num-clue-pointer waffle-num-clue-pointer--"+dirA;
+  const p2=document.createElement("div");
+  p2.className="waffle-num-clue-pointer waffle-num-clue-pointer--"+dirB;
   wrap.appendChild(badge);
-  wrap.appendChild(ptr);
+  wrap.appendChild(p1);
+  wrap.appendChild(p2);
   el.appendChild(wrap);
 }
 let waffleData=null;
@@ -2909,7 +2930,7 @@ function initWaffleNumbersGame(){
       const el=document.createElement("div");
       const key=r+","+c;
       const clue=gen.holeClues[key];
-      if(clue)renderWaffleNumHoleClue(el,clue.sum,clue.dir);
+      if(clue)renderWaffleNumHoleClue(el,clue);
       else{
         el.className="waffle-cell hole";
         el.setAttribute("aria-hidden","true");
