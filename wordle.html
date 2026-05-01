@@ -1498,9 +1498,9 @@ const DIFF_DESCS={
 function waffleDiffDescs(){
   if(currentGameMode==="waffle-numbers"){
     return{
-      easy:"9–10 locked (fixed) digits. Total green tiles at start are often ~12–18 (locked plus a few that land right by chance). No yellow — only green vs grey.",
-      normal:"8–9 locked; total green often ~10–16 depending on shuffle. Green means correct digit for that cell.",
-      hard:"7 locked digits plus a harder scramble — total green often ~8–14 (fewest correct at start). Same scoring rules; no yellow hints."
+      easy:"12–18 Starting Numbers",
+      normal:"10–16 Starting Numbers",
+      hard:"8–14 Starting Numbers"
     };
   }
   if(currentGameMode==="waffle-deluxe"){
@@ -1522,7 +1522,7 @@ function updateWaffleDifficultyButtons(){
   if(labelEl){
     labelEl.textContent=
       currentGameMode==="waffle-numbers"
-        ?"WAFFLE NUMBERS — DIFFICULTY (NEXT GAME)"
+        ?"WAFFLE NUMBERS — NEXT GAME"
         :"WAFFLE — GREEN TILES (NEXT GAME)";
   }
   const d=getWaffleDifficulty();
@@ -2349,7 +2349,7 @@ function waffleHardBuildParams(){
     return{nLock:8,yMin:8,yMax:10,minMovable:15};
   }
   if(currentGameMode==="waffle-numbers"){
-    /** Wrong movable digits — high band so Hard looks harder than a full shuffle (~Few greens); Deluxe yMin/yMax are unrelated (yellow tiles). */
+    /** Wrong movable digits — target mismatch band so Hard looks harder than a full shuffle. */
     return{nLock:7,mismatchMin:26,mismatchMax:32,minMovable:15};
   }
   return{nLock:5,yMin:5,yMax:6,minMovable:8};
