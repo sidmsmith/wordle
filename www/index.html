@@ -2331,8 +2331,12 @@ function waffleTargetGreenCount(){
   return 6+Math.floor(Math.random()*2);
 }
 function waffleHardBuildParams(){
-  if(currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers"){
+  if(currentGameMode==="waffle-deluxe"){
     return{nLock:8,yMin:8,yMax:10,minMovable:15};
+  }
+  if(currentGameMode==="waffle-numbers"){
+    /** Wrong movable digits — high band so Hard looks harder than a full shuffle (~Few greens); Deluxe yMin/yMax are unrelated (yellow tiles). */
+    return{nLock:7,mismatchMin:26,mismatchMax:32,minMovable:15};
   }
   return{nLock:5,yMin:5,yMax:6,minMovable:8};
 }
@@ -2678,8 +2682,8 @@ function countWaffleNumMismatches(grid,locked,sol,n,axes){
   }
   return ct;
 }
-function waffleBuildHardStartGridNumbers(gen,playable){
-  const{nLock,yMin,yMax,minMovable}=waffleHardBuildParams();
+function waffleBuildHardStartGridNumbers(gen,playable,nLock){
+  const{mismatchMin,mismatchMax,minMovable}=waffleHardBuildParams();
   const n=gen.n,axes=gen.axes;
   let best=null;
   let bestPen=1e9;
@@ -2694,8 +2698,8 @@ function waffleBuildHardStartGridNumbers(gen,playable){
       movable.forEach(([r,c],i)=>{grid[r][c]=letters[i];});
       if(waffleGridMatchesSolutionGen(grid,gen.sol,gen))continue;
       const y=countWaffleNumMismatches(grid,locked,gen.sol,n,axes);
-      if(y>=yMin&&y<=yMax)return{grid,locked};
-      const pen=(y<yMin?yMin-y:y>yMax?y-yMax:0);
+      if(y>=mismatchMin&&y<=mismatchMax)return{grid,locked};
+      const pen=(y<mismatchMin?mismatchMin-y:y>mismatchMax?y-mismatchMax:0);
       if(pen<bestPen){
         bestPen=pen;
         best={grid:grid.map(row=>row.slice()),locked};
@@ -2900,7 +2904,7 @@ function initWaffleNumbersGame(){
   let locked=chooseWaffleLockedCells(playable,nGreen);
   let grid;
   if(diff==="hard"){
-    const pack=waffleBuildHardStartGridNumbers(gen,playable);
+    const pack=waffleBuildHardStartGridNumbers(gen,playable,nGreen);
     grid=pack.grid;
     locked=pack.locked;
   }else{
