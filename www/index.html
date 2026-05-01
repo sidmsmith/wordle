@@ -1496,7 +1496,14 @@ const DIFF_DESCS={
   superhard:"Hard Mode + avoid gray letters & fix yellow positions"
 };
 function waffleDiffDescs(){
-  if(currentGameMode==="waffle-deluxe"||currentGameMode==="waffle-numbers"){
+  if(currentGameMode==="waffle-numbers"){
+    return{
+      easy:"9–10 locked (fixed) digits. Total green tiles at start are often ~12–18 (locked plus a few that land right by chance). No yellow — only green vs grey.",
+      normal:"8–9 locked; total green often ~10–16 depending on shuffle. Green means correct digit for that cell.",
+      hard:"7 locked digits plus a harder scramble — total green often ~8–14 (fewest correct at start). Same scoring rules; no yellow hints."
+    };
+  }
+  if(currentGameMode==="waffle-deluxe"){
     return{
       easy:"9–10 green (fixed) tiles — more to build on.",
       normal:"8–9 greens — balanced.",
@@ -1511,6 +1518,13 @@ function waffleDiffDescs(){
 }
 
 function updateWaffleDifficultyButtons(){
+  const labelEl=document.getElementById("waffle-diff-label");
+  if(labelEl){
+    labelEl.textContent=
+      currentGameMode==="waffle-numbers"
+        ?"WAFFLE NUMBERS — DIFFICULTY (NEXT GAME)"
+        :"WAFFLE — GREEN TILES (NEXT GAME)";
+  }
   const d=getWaffleDifficulty();
   document.querySelectorAll(".waffle-diff-btn").forEach(btn=>{
     btn.classList.toggle("active",btn.dataset.value===d);
@@ -3076,6 +3090,7 @@ function applyGameMode(mode,forceInit){
   closeGamePicker();
   updateGamePickerUI();
   syncWaffleDevSolutionBtn();
+  if(isWaffleGameMode())updateWaffleDifficultyButtons();
 }
 document.getElementById("game-title-btn").addEventListener("click",openGamePicker);
 document.getElementById("game-picker-x").addEventListener("click",closeGamePicker);
