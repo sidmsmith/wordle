@@ -6,3 +6,12 @@ node_modules/
 android/app/build/
 android/.gradle/
 android/.idea/
+
+# Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+ENV/
